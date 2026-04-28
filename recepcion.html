@@ -1182,6 +1182,7 @@
     function registrarActividad() {
       lastActivityTime = new Date();
       updateStats();
+      refreshTimeAgo();
     }
 
     // Refresca el "hace X minutos" de cada tarjeta cada minuto
@@ -1195,7 +1196,8 @@
       });
     }
 
-    setInterval(refreshTimeAgo, 60000);
+    refreshTimeAgo();
+    setInterval(refreshTimeAgo, 30000);
 
     // ── Borrar pedidos ──
     async function borrarTodosLosPedidos() {
