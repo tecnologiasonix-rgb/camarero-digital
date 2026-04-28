@@ -1150,6 +1150,8 @@
     const orderSound  = document.getElementById('orderSound');
 
     // ── Estadísticas ──
+    let lastActivityTime = null;
+
     function updateStats() {
       const cards  = document.querySelectorAll('.order-card');
       let pending  = 0, completed = 0, cancelled = 0;
@@ -1163,13 +1165,37 @@
       document.getElementById('stat-pending').textContent   = pending;
       document.getElementById('stat-completed').textContent = completed;
       document.getElementById('stat-cancelled').textContent = cancelled;
-      document.getElementById('stat-time').textContent      = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      document.getElementById('fc-all').textContent         = total;
+      document.getElementById('fc-pending').textContent     = pending;
+      document.getElementById('fc-completed').textContent   = completed;
+      document.getElementById('fc-cancelled').textContent   = cancelled;
 
-      document.getElementById('fc-all').textContent       = total;
-      document.getElementById('fc-pending').textContent   = pending;
-      document.getElementById('fc-completed').textContent = completed;
-      document.getElementById('fc-cancelled').textContent = cancelled;
+      // "Última actualización" = hora real del último pedido/cambio de Firebase
+      const timeEl = document.getElementById('stat-time');
+      if (lastActivityTime) {
+        timeEl.textContent = lastActivityTime.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      } else {
+        timeEl.textContent = '—';
+      }
     }
+
+    function registrarActividad() {
+      lastActivityTime = new Date();
+      updateStats();
+    }
+
+    // Refresca el "hace X minutos" de cada tarjeta cada minuto
+    function refreshTimeAgo() {
+      document.querySelectorAll('.order-card').forEach(card => {
+        const fecha = card.dataset.fecha;
+        if (fecha) {
+          const metaEl = card.querySelector('.card-meta');
+          if (metaEl) metaEl.innerHTML = `<i class="fas fa-clock"></i> ${timeAgo(fecha)}`;
+        }
+      });
+    }
+
+    setInterval(refreshTimeAgo, 60000);
 
     // ── Borrar pedidos ──
     async function borrarTodosLosPedidos() {
@@ -1246,6 +1272,7 @@
       card.classList.add('order-card');
       card.setAttribute('data-status', status);
       card.setAttribute('data-key', key);
+      card.setAttribute('data-fecha', data.fecha || '');
       card.innerHTML = `
         <div class="card-head">
           <div class="card-table">
@@ -1279,45 +1306,31 @@
       return card;
     }
 
-    // ── Actualizar estado ──
-    function actualizarEstadoPedido(key, nuevoEstado) {
+    // ── Actualizar estado — primero Firebase, luego DOM ──
+    async function actualizarEstadoPedido(key, nuevoEstado) {
       const pedidoRef = ref(db, 'pedidos/' + key);
-      const card      = document.querySelector(`.order-card[data-key="${key}"]`);
-      if (card) {
-        card.style.transition = "all 0.5s ease";
-        setTimeout(() => {
+      try {
+        await update(pedidoRef, { status: nuevoEstado });
+        // Firebase confirmó: ahora actualizamos el DOM
+        const card = document.querySelector(`.order-card[data-key="${key}"]`);
+        if (card) {
           card.setAttribute('data-status', nuevoEstado);
           const statusEl = card.querySelector('.order-status');
           statusEl.className = `order-status status-${nuevoEstado}`;
           statusEl.textContent = nuevoEstado === 'completed' ? 'Completado'
                                : nuevoEstado === 'cancelled' ? 'Cancelado'
                                : 'Pendiente';
-
           const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
-          if (currentFilter === 'all' || currentFilter === nuevoEstado) {
-            card.style.display = 'block';
-            card.style.opacity = '1';
-            card.style.transform = '';
-          } else {
+          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
             card.style.opacity = '0';
             card.style.transform = 'scale(0.85)';
-            setTimeout(() => { card.style.display = 'none'; }, 500);
+            setTimeout(() => { card.style.display = 'none'; }, 400);
           }
           updateStats();
-        }, 50);
-      }
-
-      update(pedidoRef, { status: nuevoEstado }).catch(() => {
-        if (card) {
-          card.setAttribute('data-status', 'pending');
-          const statusEl = card.querySelector('.order-status');
-          statusEl.className  = 'order-status status-pending';
-          statusEl.textContent = 'Pendiente';
-          const f = document.querySelector('.filter-btn.active')?.dataset.filter;
-          if (f) filtrarPedidos(f);
         }
+      } catch {
         showToast('Error al actualizar el pedido', 'error');
-      });
+      }
     }
 
     // ── Agregar o actualizar pedido ──
@@ -1397,10 +1410,12 @@
         lastSoundTime = Date.now();
       }
       agregarOActualizarPedido(key, data);
+      registrarActividad();
     });
 
     onChildChanged(pedidosRef, (snapshot) => {
       agregarOActualizarPedido(snapshot.key, snapshot.val());
+      registrarActividad();
     });
 
     onChildRemoved(pedidosRef, (snapshot) => {
@@ -1410,6 +1425,7 @@
         existente.style.transform = 'scale(0.85)';
         setTimeout(() => { existente.remove(); updateStats(); }, 300);
       }
+      registrarActividad();
     });
 
     // ── Filtros ──
@@ -1483,9 +1499,6 @@
     });
 
     applyTheme();
-
-    // ── Actualizar el reloj de "última actualización" cada minuto ──
-    setInterval(updateStats, 60000);
   </script>
 </body>
 </html>
