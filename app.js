@@ -2,27 +2,26 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-
-// CONFIGURACIÓN DE FIREBASE:
+// ─── CONFIGURACIÓN DE FIREBASE ───────────────────────────────────────────────
 const firebaseConfig = {
-  apiKey: "AIzaSyDPbN_dr1LzVhksnFmzeKOLpHAZZRSxWv4",
-  authDomain: "tecnologiasonix-733fc.firebaseapp.com",
-  databaseURL: "https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tecnologiasonix-733fc",
-  storageBucket: "tecnologiasonix-733fc.firebasestorage.app",
+  apiKey:            "AIzaSyDPbN_dr1LzVhksnFmzeKOLpHAZZRSxWv4",
+  authDomain:        "tecnologiasonix-733fc.firebaseapp.com",
+  databaseURL:       "https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "tecnologiasonix-733fc",
+  storageBucket:     "tecnologiasonix-733fc.firebasestorage.app",
   messagingSenderId: "139377195491",
-  appId: "1:139377195491:web:0727f6e57cc23351bd88d6",
-  measurementId: "G-DTY83CCZZ9"
+  appId:             "1:139377195491:web:0727f6e57cc23351bd88d6",
+  measurementId:     "G-DTY83CCZZ9"
 };
 
-
-// Inicializa la aplicación Firebase y la base de datos
+// Inicializa Firebase
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
+const db  = getDatabase(app);
 
 /**
  * Guarda un pedido en Firebase Realtime Database.
+ * @param {Object} orderData
+ * @returns {Promise}
  */
 export function guardarPedido(orderData) {
   if (!orderData.fecha) {
@@ -34,9 +33,9 @@ export function guardarPedido(orderData) {
 
 /**
  * Carga todos los productos desde Firebase Realtime Database.
- * Los productos se guardan en /productos/{id} con los campos:
- * id, name, description, price, image, category, subcategory, menuOptions (opcional)
- * @returns {Promise<Array>} Array de productos
+ * Estructura esperada en /productos/{id}:
+ *   name, description, price, image, category, subcategory, menuOptions (opcional)
+ * @returns {Promise<Array>}
  */
 export async function cargarProductos() {
   const productosRef = ref(db, 'productos');
@@ -61,5 +60,4 @@ export async function cargarProductos() {
   return productos.filter(p => p.name);
 }
 
-// Exporta la configuración y la instancia de Firebase
 export { firebaseConfig, db };
