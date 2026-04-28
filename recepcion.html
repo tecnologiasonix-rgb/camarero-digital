@@ -3,676 +3,1022 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Administración</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <title>Panel de Cocina</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    /* ── LIGHT MODE (default) ── */
     :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --success-color: #27ae60;
-      --warning-color: #f1c40f;
-      --danger-color: #e74c3c;
-      --light-color: #ecf0f1;
-      --text-color: #333;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --border-radius: 8px;
+      --bg:         #F4F2EE;
+      --surface:    #FFFFFF;
+      --surface2:   #F9F8F6;
+      --surface3:   #EEECEA;
+      --border:     #E5E2DC;
+      --border2:    #D0CDC6;
+
+      --ink:        #1A1A18;
+      --ink-muted:  #7A7870;
+      --ink-dim:    #BEBAB2;
+
+      --pending:    #E8922A;
+      --pending-bg: rgba(232,146,42,0.1);
+      --pending-bd: rgba(232,146,42,0.25);
+
+      --done:       #2D9B6F;
+      --done-bg:    rgba(45,155,111,0.1);
+      --done-bd:    rgba(45,155,111,0.25);
+
+      --cancel:     #D94F3D;
+      --cancel-bg:  rgba(217,79,61,0.1);
+      --cancel-bd:  rgba(217,79,61,0.2);
+
+      --accent:     #1A1A18;
+      --accent-bg:  rgba(26,26,24,0.07);
+      --accent-fg:  #FFFFFF;
+
+      --radius:     12px;
+      --radius-sm:  7px;
+      --shadow:     0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
+      --tr:         all 0.25s cubic-bezier(0.25,0.46,0.45,0.94);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
+    /* ── DARK MODE ── */
+    [data-theme="dark"] {
+      --bg:         #0D0F12;
+      --surface:    #141720;
+      --surface2:   #1C2030;
+      --surface3:   #232840;
+      --border:     rgba(255,255,255,0.07);
+      --border2:    rgba(255,255,255,0.12);
+
+      --ink:        #EDF0F7;
+      --ink-muted:  #8892A4;
+      --ink-dim:    #4A5368;
+
+      --pending:    #F5A623;
+      --pending-bg: rgba(245,166,35,0.12);
+      --pending-bd: rgba(245,166,35,0.3);
+
+      --done:       #2ECC8F;
+      --done-bg:    rgba(46,204,143,0.1);
+      --done-bd:    rgba(46,204,143,0.3);
+
+      --cancel:     #E74C3C;
+      --cancel-bg:  rgba(231,76,60,0.1);
+      --cancel-bd:  rgba(231,76,60,0.3);
+
+      --accent:     #4F8EF7;
+      --accent-bg:  rgba(79,142,247,0.12);
+      --accent-fg:  #FFFFFF;
+
+      --shadow:     0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    *, *::before, *::after {
+      margin: 0; padding: 0;
       box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
-      background-color: #f5f5f5;
-      color: var(--text-color);
+      font-family: 'Mulish', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
     }
 
-    .admin-container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
-    .admin-header {
-      position: relative;
-      text-align: center;
-      padding: 2rem;
-      background-color: var(--primary-color);
-      color: white;
-      border-radius: var(--border-radius);
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-
-    .header-controls {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: row;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .logout-btn {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 8px 15px;
-      border: none;
-      border-radius: 20px;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s;
-      white-space: nowrap;
-    }
-
-    .logout-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    #deleteAllBtn {
-      background: var(--warning-color);
-    }
-
-    #deleteAllBtn:hover {
-      background: #d39e00;
-    }
-
-    .filters {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-
-    .filter-btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      background-color: var(--light-color);
-      transition: all 0.3s ease;
-      font-size: 0.9rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .filter-btn::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 0;
-      height: 3px;
-      background-color: var(--primary-color);
-      transition: width 0.3s ease;
-    }
-
-    .filter-btn:hover::before {
-      width: 100%;
-    }
-
-    .filter-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    .filter-btn.active {
-      background-color: var(--primary-color);
-      color: white;
-      transform: translateY(-2px);
-    }
-
-    .filter-btn.active::before {
-      width: 100%;
-      background-color: var(--secondary-color);
-    }
-
-    .filters-select {
-      display: none;
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 1rem;
-      border: 2px solid var(--primary-color);
-      border-radius: var(--border-radius);
-      background: white;
-      font-size: 1rem;
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232c3e50'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 24px;
-      cursor: pointer;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .filters-select:focus {
-      border-color: var(--secondary-color);
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
-      outline: none;
-    }
-
-    .orders-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-    }
-
-    .order-card {
-      background: white;
-      border-radius: var(--border-radius);
-      padding: 20px;
-      box-shadow: var(--shadow);
-      position: relative;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border-left: 4px solid transparent;
-      animation: fadeIn 0.5s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .order-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-    }
-
-    .order-card[data-status="pending"] {
-      border-left-color: var(--warning-color);
-    }
-
-    .order-card[data-status="completed"] {
-      border-left-color: var(--success-color);
-    }
-
-    .order-card[data-status="cancelled"] {
-      border-left-color: var(--danger-color);
-    }
-
-    .order-status {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 5px 15px;
-      border-radius: var(--border-radius);
-      font-size: 0.8rem;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
-
-    .status-pending {
-      background-color: var(--warning-color);
-      color: var(--text-color);
-    }
-
-    .status-completed {
-      background-color: var(--success-color);
-      color: white;
-    }
-
-    .status-cancelled {
-      background-color: var(--danger-color);
-      color: white;
-    }
-
-    .order-table {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-    }
-
-    .order-table::before {
-      content: '\f2e7';
-      font-family: 'Font Awesome 5 Free';
-      font-weight: 900;
-      margin-right: 10px;
-      color: var(--secondary-color);
-    }
-
-    .order-time {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-    }
-
-    .order-time::before {
-      content: '\f017';
-      font-family: 'Font Awesome 5 Free';
-      font-weight: 900;
-      margin-right: 5px;
-      color: #888;
-    }
-
-    .order-items {
-      list-style: none;
-      margin-bottom: 15px;
-      max-height: 200px;
-      overflow-y: auto;
-      padding-right: 5px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--secondary-color) #eee;
-    }
-
-    .order-items::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .order-items::-webkit-scrollbar-track {
-      background: #eee;
-      border-radius: 10px;
-    }
-
-    .order-items::-webkit-scrollbar-thumb {
-      background-color: var(--secondary-color);
-      border-radius: 10px;
-    }
-
-    .order-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      transition: background-color 0.2s ease;
-    }
-
-    .order-item:hover {
-      background-color: rgba(52, 152, 219, 0.05);
-    }
-
-    .order-notes {
-      background-color: #f8f9fa;
-      padding: 10px;
-      border-radius: var(--border-radius);
-      margin-top: 10px;
-      font-size: 0.9rem;
-      border-left: 3px solid var(--secondary-color);
-      transition: all 0.3s ease;
-    }
-
-    .order-notes:hover {
-      background-color: #edf2f7;
-      transform: translateX(2px);
-    }
-
-    .order-actions {
-      margin-top: 15px;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-
-    .action-btn {
-      padding: 10px 8px;
-      border: none;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .action-btn::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: -100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: 0.5s;
-    }
-
-    .action-btn:hover::after {
-      left: 100%;
-    }
-
-    .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    .action-btn:active {
-      transform: translateY(1px);
-    }
-
-    .complete-btn {
-      background-color: var(--success-color);
-      color: white;
-    }
-
-    .complete-btn:hover {
-      background-color: #219653;
-    }
-
-    .cancel-btn {
-      background-color: var(--danger-color);
-      color: white;
-    }
-
-    .cancel-btn:hover {
-      background-color: #c0392b;
-    }
-
-    .print-btn {
-      background-color: var(--secondary-color);
-      color: white;
-    }
-
-    .print-btn:hover {
-      background-color: #2980b9;
-    }
-
+    /* ══════════════════════════════════════
+       LOGIN MODAL
+    ══════════════════════════════════════ */
     .login-modal {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
+      inset: 0;
+      background: rgba(0,0,0,0.5);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
       padding: 20px;
-      backdrop-filter: blur(5px);
-    }
-
-    .confirm-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      padding: 20px;
-      backdrop-filter: blur(5px);
-    }
-
-    .confirm-content {
-      background: white;
-      padding: 30px;
-      border-radius: var(--border-radius);
-      text-align: center;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      animation: modalFadeIn 0.3s ease;
-    }
-
-    .confirm-buttons {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
+      backdrop-filter: blur(8px);
     }
 
     .login-content {
-      background: white;
-      padding: 30px;
-      border-radius: var(--border-radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      border-radius: var(--radius);
       text-align: center;
-      max-width: 300px;
+      max-width: 320px;
       width: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      animation: modalFadeIn 0.3s ease;
+      box-shadow: var(--shadow-lg);
+      animation: modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
     }
 
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: translateY(-50px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.9) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .login-logo {
+      width: 52px; height: 52px;
+      background: var(--accent);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--accent-fg);
+      margin: 0 auto 1.4rem;
     }
 
     .login-content h2 {
-      margin-bottom: 20px;
-      color: var(--primary-color);
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      position: relative;
-      padding-bottom: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.02em;
     }
 
-    .login-content h2::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 3px;
-      background-color: var(--secondary-color);
+    .login-content p {
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      margin-bottom: 1.5rem;
     }
 
     .login-content input {
       width: 100%;
-      padding: 12px 15px;
-      margin-bottom: 20px;
-      border: 2px solid #ddd;
-      border-radius: 6px;
+      padding: 11px 14px;
+      margin-bottom: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
       font-size: 1rem;
-      transition: all 0.3s;
+      background: var(--surface2);
+      color: var(--ink);
+      text-align: center;
+      letter-spacing: 0.3em;
+      transition: var(--tr);
+      outline: none;
+    }
+
+    .login-content input::placeholder {
+      font-family: 'Mulish', sans-serif;
+      letter-spacing: 0.02em;
+      color: var(--ink-dim);
+      font-size: 0.85rem;
     }
 
     .login-content input:focus {
-      border-color: var(--primary-color);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
+      border-color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(26,26,24,0.07);
+    }
+
+    [data-theme="dark"] .login-content input:focus {
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
     }
 
     .login-content button {
-      padding: 12px 30px;
-      font-size: 1rem;
-      background: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-content button::after {
-      content: '';
-      position: absolute;
       width: 100%;
-      height: 100%;
-      top: 0;
-      left: -100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: 0.5s;
-    }
-
-    .login-content button:hover::after {
-      left: 100%;
+      padding: 11px;
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: var(--ink);
+      color: var(--accent-fg);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--tr);
+      letter-spacing: 0.02em;
     }
 
     .login-content button:hover {
-      background: var(--secondary-color);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      opacity: 0.85;
+      transform: translateY(-1px);
     }
 
     .login-error {
-      color: var(--danger-color);
-      margin-top: 15px;
-      font-weight: bold;
+      color: var(--cancel);
+      margin-top: 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
       display: none;
       animation: shake 0.5s ease;
     }
 
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-5px); }
-      40%, 80% { transform: translateX(5px); }
+      20%, 60%  { transform: translateX(-6px); }
+      40%, 80%  { transform: translateX(6px); }
     }
 
-    @media (max-width: 768px) {
-      .filters {
-        display: none;
-      }
-      
-      .filters-select {
-        display: block;
-      }
-      
-      .logout-btn {
-        padding: 6px 12px;
-        font-size: 0.9rem;
-      }
-
-      .logout-btn span {
-        display: none;
-      }
-
-      .header-controls {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        position: static;
-        margin-top: 15px;
-      }
-
-      .admin-container {
-        padding: 10px;
-      }
-
-      .admin-header {
-        padding: 1.5rem;
-      }
-
-      .order-table {
-        font-size: 1.3rem;
-      }
-
-      .order-time, .order-item, .order-notes, .action-btn {
-        font-size: 0.8rem;
-      }
-
-      .order-actions {
-        grid-template-columns: 1fr;
-      }
+    /* ══════════════════════════════════════
+       CONFIRM MODAL
+    ══════════════════════════════════════ */
+    .confirm-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
+      backdrop-filter: blur(4px);
     }
 
-    @media (min-width: 769px) {
-      .filters-select {
-        display: none;
-      }
+    .confirm-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      animation: modalPop 0.25s cubic-bezier(0.34,1.56,0.64,1);
     }
 
-    @media (max-width: 480px) {
-      .filters {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .filter-btn {
-        width: 100%;
-        margin-bottom: 5px;
-      }
-
-      .orders-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .admin-header {
-        padding: 1rem;
-      }
+    .confirm-icon {
+      width: 52px; height: 52px;
+      background: var(--cancel-bg);
+      border: 1px solid var(--cancel-bd);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: var(--cancel);
+      margin: 0 auto 1.2rem;
     }
 
-    /* Estilos de clasificación */
-    .sorting-animation {
-      transition: all 0.5s ease;
+    .confirm-content h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .confirm-content p {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* ══════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════ */
+    .admin-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: var(--ink);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-fg);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    [data-theme="dark"] .brand-icon {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--accent);
+    }
+
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-sub {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      font-weight: 400;
+    }
+
+    /* Live indicator */
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--done-bg);
+      border: 1px solid var(--done-bd);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--done);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .live-dot {
+      width: 6px; height: 6px;
+      background: var(--done);
+      border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      height: 36px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink-muted);
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--tr);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+
+    .ctrl-btn:hover {
+      color: var(--ink);
+      background: var(--surface2);
+      border-color: var(--border2);
+    }
+
+    .ctrl-btn.danger {
+      color: var(--cancel);
+      border-color: var(--cancel-bd);
+      background: var(--cancel-bg);
+    }
+
+    .ctrl-btn.danger:hover {
+      background: rgba(217,79,61,0.18);
+    }
+
+    /* Dark mode toggle */
+    .ctrl-btn.theme-toggle {
+      width: 36px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .ctrl-btn i { font-size: 0.82rem; }
+
+    /* ══════════════════════════════════════
+       FILTER BAR
+    ══════════════════════════════════════ */
+    .filter-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 50px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filter-bar::-webkit-scrollbar { display: none; }
+
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 14px;
+      height: 32px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: transparent;
+      color: var(--ink-muted);
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--tr);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .filter-btn:hover {
+      color: var(--ink);
+      border-color: var(--border2);
+      background: var(--surface2);
     }
 
     .filter-btn.active {
-      animation: pulse 1s infinite;
+      background: var(--surface2);
+      border-color: var(--border2);
+      color: var(--ink);
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+    .filter-btn[data-filter="pending"].active  { background: var(--pending-bg); border-color: var(--pending-bd); color: var(--pending); }
+    .filter-btn[data-filter="completed"].active { background: var(--done-bg);    border-color: var(--done-bd);    color: var(--done); }
+    .filter-btn[data-filter="cancelled"].active { background: var(--cancel-bg);  border-color: var(--cancel-bd);  color: var(--cancel); }
+
+    .filter-count {
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1px 7px;
+      font-size: 0.7rem;
+      min-width: 20px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .filter-btn.active .filter-count { background: rgba(255,255,255,0.15); }
+
+    /* Mobile select */
+    .filters-select {
+      display: none;
     }
 
     .filter-indicator {
       text-align: center;
       margin-bottom: 1rem;
-      font-size: 0.9rem;
-      color: var(--primary-color);
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      font-weight: 500;
       opacity: 0;
       transform: translateY(-10px);
-      transition: all 0.3s ease;
+      transition: var(--tr);
     }
 
     .filter-indicator.active {
       opacity: 1;
       transform: translateY(0);
     }
+
+    /* ══════════════════════════════════════
+       MAIN CONTENT
+    ══════════════════════════════════════ */
+    .admin-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      font-weight: 600;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-chip strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .stat-chip .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════
+       ORDERS GRID
+    ══════════════════════════════════════ */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 14px;
+    }
+
+    /* ══════════════════════════════════════
+       ORDER CARD
+    ══════════════════════════════════════ */
+    .order-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-top: 3px solid transparent;
+      overflow: hidden;
+      position: relative;
+      transition: var(--tr);
+      animation: cardIn 0.35s ease-out both;
+      box-shadow: var(--shadow);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card:hover {
+      border-color: var(--border2);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .order-card[data-status="pending"]   { border-top-color: var(--pending); }
+    .order-card[data-status="completed"] { border-top-color: var(--done); }
+    .order-card[data-status="cancelled"] { border-top-color: var(--cancel); opacity: 0.65; }
+
+    /* Card header */
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-table {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-icon {
+      width: 32px; height: 32px;
+      background: var(--ink);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-fg);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    [data-theme="dark"] .table-icon {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--accent);
+    }
+
+    .table-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+
+    .order-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    .order-status::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      display: block;
+    }
+
+    .status-pending   { background: var(--pending-bg); color: var(--pending); border: 1px solid var(--pending-bd); }
+    .status-completed { background: var(--done-bg);    color: var(--done);    border: 1px solid var(--done-bd); }
+    .status-cancelled { background: var(--cancel-bg);  color: var(--cancel);  border: 1px solid var(--cancel-bd); }
+
+    /* Card meta */
+    .card-meta {
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--ink-dim);
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .card-meta i { font-size: 0.7rem; }
+
+    /* Card items */
+    .order-items {
+      list-style: none;
+      padding: 10px 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s;
+    }
+
+    .order-item:hover { background: var(--surface2); }
+
+    .item-left { flex: 1; }
+
+    .item-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    .item-qty {
+      display: inline-block;
+      background: var(--surface3);
+      color: var(--ink-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+    }
+
+    .item-detail {
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .item-note {
+      font-size: 0.72rem;
+      color: var(--pending);
+      margin-top: 2px;
+      font-style: italic;
+    }
+
+    .item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      flex-shrink: 0;
+      padding-left: 8px;
+    }
+
+    /* Notes */
+    .order-notes {
+      margin: 0 16px 10px;
+      background: rgba(245,166,35,0.07);
+      border: 1px solid var(--pending-bd);
+      border-left: 3px solid var(--pending);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      line-height: 1.4;
+    }
+
+    .order-notes strong { color: var(--pending); }
+
+    /* Card actions */
+    .order-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .action-btn {
+      padding: 11px 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: var(--tr);
+      color: var(--ink-muted);
+      border-right: 1px solid var(--border);
+      letter-spacing: 0.01em;
+    }
+
+    .action-btn:last-child { border-right: none; }
+
+    .action-btn i { font-size: 0.8rem; }
+
+    .complete-btn:hover {
+      background: var(--done-bg);
+      color: var(--done);
+    }
+
+    .cancel-btn:hover {
+      background: var(--cancel-bg);
+      color: var(--cancel);
+    }
+
+    .print-btn:hover {
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    /* Sorting animation */
+    .sorting-animation {
+      transition: all 0.4s ease;
+    }
+
+    /* ══════════════════════════════════════
+       EMPTY STATE
+    ══════════════════════════════════════ */
+    .empty-state {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5rem 2rem;
+      text-align: center;
+      color: var(--ink-dim);
+    }
+
+    .empty-state i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════
+       BUTTONS (confirm dialog)
+    ══════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0 16px;
+      height: 38px;
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--tr);
+      flex: 1;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--ink-muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--ink); background: var(--surface3); }
+
+    .btn-danger-solid {
+      background: var(--cancel);
+      color: white;
+    }
+    .btn-danger-solid:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* ══════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .filter-bar {
+        display: none;
+      }
+
+      .filters-select {
+        display: block;
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--surface);
+        color: var(--ink);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: 'Mulish', sans-serif;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1.2rem;
+        cursor: pointer;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237A7870'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 22px;
+        padding-right: 40px;
+      }
+
+      .ctrl-btn span { display: none; }
+      .ctrl-btn { padding: 0 10px; }
+
+      .brand-sub { display: none; }
+
+      .orders-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .order-actions {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .stats-bar { display: none; }
+
+      .admin-container { padding: 1rem; }
+    }
+
+    @media (max-width: 420px) {
+      .admin-header { padding: 0 1rem; }
+      .live-pill { display: none; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- LOGIN MODAL -->
   <div id="loginModal" class="login-modal">
     <div class="login-content">
-      <h2>Acceso Administrador</h2>
-      <input type="password" id="adminPinInput" placeholder="🔒 Ingrese su PIN">
-      <button id="loginBtn">Ingresar</button>
-      <p id="loginError" class="login-error">PIN incorrecto</p>
+      <div class="login-logo"><i class="fas fa-fire-burner"></i></div>
+      <h2>Panel de Cocina</h2>
+      <p>Introduce tu PIN para acceder</p>
+      <input type="password" id="adminPinInput" placeholder="🔒 PIN de acceso">
+      <button id="loginBtn">Entrar</button>
+      <p id="loginError" class="login-error"><i class="fas fa-exclamation-triangle"></i> PIN incorrecto</p>
     </div>
   </div>
 
+  <!-- CONFIRM MODAL -->
   <div id="confirmModal" class="confirm-modal">
     <div class="confirm-content">
-      <h2>¿Está seguro de borrar todos los pedidos?</h2>
-      <p>Esta acción es irreversible y eliminará todos los pedidos de Firebase.</p>
+      <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+      <h2>¿Borrar todos los pedidos?</h2>
+      <p>Esta acción es <strong style="color:var(--cancel)">irreversible</strong> y eliminará permanentemente todos los pedidos de Firebase.</p>
       <div class="confirm-buttons">
-        <button id="confirmDelete" class="action-btn cancel-btn">Borrar Todo</button>
-        <button id="cancelDelete" class="action-btn print-btn">Cancelar</button>
+        <button id="cancelDelete" class="btn btn-ghost"><i class="fas fa-times"></i> Cancelar</button>
+        <button id="confirmDelete" class="btn btn-danger-solid"><i class="fas fa-trash-alt"></i> Borrar todo</button>
       </div>
     </div>
   </div>
-  
-  <div class="admin-container">
-    <header class="admin-header">
-      <h1 class="text-2xl font-bold mb-2">Panel de Administración</h1>
-      <p>Pedidos en tiempo real</p>
-      <div class="header-controls">
-        <button id="deleteAllBtn" class="logout-btn">
-          <i class="fas fa-trash-alt"></i> <span>Borrar Todo</span>
-        </button>
-        <button id="soundToggle" class="logout-btn">
-          <i class="fas fa-bell"></i> <span>Sonido: ON</span>
-        </button>
-        <button id="logoutBtn" class="logout-btn">
-          <i class="fa fa-sign-out-alt"></i> <span>Cerrar sesión</span>
-        </button>
-      </div>
-    </header>
 
+  <!-- HEADER -->
+  <header class="admin-header">
+    <div class="header-brand">
+      <div class="brand-icon"><i class="fas fa-fire-burner"></i></div>
+      <div>
+        <div class="brand-name">Cocina</div>
+        <div class="brand-sub">Pedidos en tiempo real</div>
+      </div>
+    </div>
+
+    <div class="live-pill">
+      <span class="live-dot"></span>
+      En vivo
+    </div>
+
+    <div class="header-controls">
+      <button id="themeToggle" class="ctrl-btn theme-toggle" title="Cambiar tema">
+        <i class="fas fa-moon"></i>
+      </button>
+      <button id="soundToggle" class="ctrl-btn">
+        <i class="fas fa-bell"></i> <span>Sonido: ON</span>
+      </button>
+      <button id="deleteAllBtn" class="ctrl-btn danger">
+        <i class="fas fa-trash-alt"></i> <span>Borrar todo</span>
+      </button>
+      <button id="logoutBtn" class="ctrl-btn">
+        <i class="fas fa-sign-out-alt"></i> <span>Salir</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- FILTER BAR (desktop) -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="all">
+      Todos <span class="filter-count" id="fc-all">0</span>
+    </button>
+    <button class="filter-btn" data-filter="pending">
+      <i class="fas fa-circle" style="font-size:0.5rem;color:var(--pending);"></i>
+      Pendientes <span class="filter-count" id="fc-pending">0</span>
+    </button>
+    <button class="filter-btn" data-filter="completed">
+      <i class="fas fa-circle" style="font-size:0.5rem;color:var(--done);"></i>
+      Completados <span class="filter-count" id="fc-completed">0</span>
+    </button>
+    <button class="filter-btn" data-filter="cancelled">
+      <i class="fas fa-circle" style="font-size:0.5rem;color:var(--cancel);"></i>
+      Cancelados <span class="filter-count" id="fc-cancelled">0</span>
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="admin-container">
+
+    <!-- Stats (desktop) -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-chip">
+        <span class="dot" style="background:var(--pending);"></span>
+        <span>Pendientes</span>
+        <strong id="stat-pending">0</strong>
+      </div>
+      <div class="stat-chip">
+        <span class="dot" style="background:var(--done);"></span>
+        <span>Completados</span>
+        <strong id="stat-completed">0</strong>
+      </div>
+      <div class="stat-chip">
+        <span class="dot" style="background:var(--cancel);"></span>
+        <span>Cancelados</span>
+        <strong id="stat-cancelled">0</strong>
+      </div>
+      <div class="stat-chip" style="margin-left:auto;">
+        <i class="fas fa-clock" style="color:var(--ink-dim);font-size:0.75rem;"></i>
+        <span>Última actualización</span>
+        <strong id="stat-time" style="font-size:0.78rem;">—</strong>
+      </div>
+    </div>
+
+    <!-- Mobile select -->
     <select class="filters-select" id="mobileFilters">
       <option value="all">Todos los pedidos</option>
       <option value="pending">Pendientes</option>
@@ -680,52 +1026,51 @@
       <option value="cancelled">Cancelados</option>
     </select>
 
-    <div class="filters">
-      <button class="filter-btn active" data-filter="all">Todos</button>
-      <button class="filter-btn" data-filter="pending">Pendientes</button>
-      <button class="filter-btn" data-filter="completed">Completados</button>
-      <button class="filter-btn" data-filter="cancelled">Cancelados</button>
-    </div>
-    
     <div id="filterIndicator" class="filter-indicator">
       Mostrando: <span id="currentFilter">Todos los pedidos</span>
     </div>
-    
-    <div class="orders-grid" id="ordersGrid"></div>
+
+    <div class="orders-grid" id="ordersGrid">
+      <div class="empty-state">
+        <i class="fas fa-receipt"></i>
+        <p>Esperando pedidos…<br><span style="font-size:0.8rem;opacity:0.7;">Los pedidos aparecerán aquí en tiempo real</span></p>
+      </div>
+    </div>
   </div>
 
   <audio id="orderSound" src="https://github.com/Onixmanager/Prueba2-CamareroDigital/raw/refs/heads/main/notificacion1.mp3" preload="auto"></audio>
 
+  <!-- ══ LÓGICA — SIN CAMBIOS ══ -->
   <script type="module">
-    const adminPIN = "adminadmin";
+    const adminPIN  = "adminadmin";
     const sessionKey = "adminSession";
     const elements = {
-      loginModal: document.getElementById("loginModal"),
-      adminPinInput: document.getElementById("adminPinInput"),
-      loginBtn: document.getElementById("loginBtn"),
-      loginError: document.getElementById("loginError"),
-      logoutBtn: document.getElementById("logoutBtn"),
-      deleteAllBtn: document.getElementById("deleteAllBtn"),
-      confirmModal: document.getElementById("confirmModal"),
-      confirmDelete: document.getElementById("confirmDelete"),
-      cancelDelete: document.getElementById("cancelDelete"),
-      soundToggle: document.getElementById("soundToggle"),
-      mobileFilters: document.getElementById("mobileFilters"),
-      filterButtons: document.querySelectorAll('.filter-btn'),
-      ordersGrid: document.getElementById('ordersGrid'),
-      filterIndicator: document.getElementById('filterIndicator'),
-      currentFilter: document.getElementById('currentFilter')
+      loginModal:     document.getElementById("loginModal"),
+      adminPinInput:  document.getElementById("adminPinInput"),
+      loginBtn:       document.getElementById("loginBtn"),
+      loginError:     document.getElementById("loginError"),
+      logoutBtn:      document.getElementById("logoutBtn"),
+      deleteAllBtn:   document.getElementById("deleteAllBtn"),
+      confirmModal:   document.getElementById("confirmModal"),
+      confirmDelete:  document.getElementById("confirmDelete"),
+      cancelDelete:   document.getElementById("cancelDelete"),
+      soundToggle:    document.getElementById("soundToggle"),
+      mobileFilters:  document.getElementById("mobileFilters"),
+      filterButtons:  document.querySelectorAll('.filter-btn'),
+      ordersGrid:     document.getElementById('ordersGrid'),
+      filterIndicator:document.getElementById('filterIndicator'),
+      currentFilter:  document.getElementById('currentFilter')
     };
 
-    // Control de sonido
-    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    // ── Sonido ──
+    let soundEnabled  = localStorage.getItem('soundEnabled') !== 'false';
     let lastSoundTime = 0;
 
     function updateSoundIcon() {
       const icon = elements.soundToggle.querySelector('i');
       const text = elements.soundToggle.querySelector('span');
-      icon.className = soundEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
-      text.textContent = soundEnabled ? 'Sonido: ON' : 'Sonido: OFF';
+      icon.className    = soundEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
+      if (text) text.textContent = soundEnabled ? 'Sonido: ON' : 'Sonido: OFF';
     }
 
     elements.soundToggle.addEventListener('click', () => {
@@ -735,15 +1080,9 @@
     });
     updateSoundIcon();
 
-    // Autenticación
-    function showLoginModal() {
-      elements.loginModal.style.display = "flex";
-    }
-
-    function hideLoginModal() {
-      elements.loginModal.style.display = "none";
-    }
-
+    // ── Auth ──
+    function showLoginModal() { elements.loginModal.style.display = "flex"; }
+    function hideLoginModal() { elements.loginModal.style.display = "none"; }
     function checkAuth() {
       localStorage.getItem(sessionKey) === "true" ? hideLoginModal() : showLoginModal();
     }
@@ -754,19 +1093,13 @@
         hideLoginModal();
       } else {
         elements.loginError.style.display = "block";
-        // Reiniciar la animación
         elements.loginError.style.animation = 'none';
-        setTimeout(() => {
-          elements.loginError.style.animation = 'shake 0.5s ease';
-        }, 10);
+        setTimeout(() => { elements.loginError.style.animation = 'shake 0.5s ease'; }, 10);
       }
     });
-    
-    // Permitir login con Enter
-    elements.adminPinInput.addEventListener("keyup", (event) => {
-      if (event.key === "Enter") {
-        elements.loginBtn.click();
-      }
+
+    elements.adminPinInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") elements.loginBtn.click();
     });
 
     elements.logoutBtn.addEventListener("click", () => {
@@ -776,257 +1109,259 @@
 
     checkAuth();
 
-    // Firebase
+    // ── Firebase ──
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, get, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyCzZBL-GfbxbWtPzMHOkSgnfF0UXD7wt4Y",
-      authDomain: "pruebacamarero-b7f54.firebaseapp.com",
-      databaseURL: "https://pruebacamarero-b7f54-default-rtdb.europe-west1.firebasedatabase.app/",
-      projectId: "pruebacamarero-b7f54",
-      storageBucket: "pruebacamarero-b7f54.firebasestorage.app",
+      apiKey:            "AIzaSyCzZBL-GfbxbWtPzMHOkSgnfF0UXD7wt4Y",
+      authDomain:        "pruebacamarero-b7f54.firebaseapp.com",
+      databaseURL:       "https://pruebacamarero-b7f54-default-rtdb.europe-west1.firebasedatabase.app/",
+      projectId:         "pruebacamarero-b7f54",
+      storageBucket:     "pruebacamarero-b7f54.firebasestorage.app",
       messagingSenderId: "191387429666",
-      appId: "1:191387429666:web:ae8472198e543c6de5d37b",
-      measurementId: "G-KXDVQLNQW2"
+      appId:             "1:191387429666:web:ae8472198e543c6de5d37b",
+      measurementId:     "G-KXDVQLNQW2"
     };
 
     const appFirebase = initializeApp(firebaseConfig);
-    const db = getDatabase(appFirebase);
-    const pedidosRef = ref(db, 'pedidos');
-    const orderSound = document.getElementById('orderSound');
+    const db          = getDatabase(appFirebase);
+    const pedidosRef  = ref(db, 'pedidos');
+    const orderSound  = document.getElementById('orderSound');
 
-    // Funciones de pedidos
+    // ── Estadísticas ──
+    function updateStats() {
+      const cards  = document.querySelectorAll('.order-card');
+      let pending  = 0, completed = 0, cancelled = 0;
+      cards.forEach(c => {
+        if (c.dataset.status === 'pending')   pending++;
+        if (c.dataset.status === 'completed') completed++;
+        if (c.dataset.status === 'cancelled') cancelled++;
+      });
+      const total = pending + completed + cancelled;
+
+      document.getElementById('stat-pending').textContent   = pending;
+      document.getElementById('stat-completed').textContent = completed;
+      document.getElementById('stat-cancelled').textContent = cancelled;
+      document.getElementById('stat-time').textContent      = new Date().toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+      document.getElementById('fc-all').textContent       = total;
+      document.getElementById('fc-pending').textContent   = pending;
+      document.getElementById('fc-completed').textContent = completed;
+      document.getElementById('fc-cancelled').textContent = cancelled;
+    }
+
+    // ── Borrar pedidos ──
     async function borrarTodosLosPedidos() {
       try {
-        // Usar remove() directamente en la referencia de pedidos para eliminar todo
         await remove(pedidosRef);
-        console.log("Todos los pedidos han sido eliminados permanentemente");
-        
-        // Mostrar mensaje de éxito
         alert("Todos los pedidos han sido eliminados correctamente");
-        
-        // Limpiar la interfaz
         elements.ordersGrid.innerHTML = '';
+        updateStats();
       } catch (error) {
         console.error('Error al borrar pedidos:', error);
         alert("Error al eliminar los pedidos: " + error.message);
       }
     }
 
-    // Manejo de modales
     elements.deleteAllBtn.addEventListener('click', () => {
       elements.confirmModal.style.display = 'flex';
     });
-
     elements.cancelDelete.addEventListener('click', () => {
       elements.confirmModal.style.display = 'none';
     });
-
     elements.confirmDelete.addEventListener('click', async () => {
       elements.confirmModal.style.display = 'none';
       await borrarTodosLosPedidos();
     });
 
-    // Funciones de tiempo y creación de tarjetas
+    // ── Time ago ──
     function timeAgo(fecha) {
-      const diffMs = Date.now() - new Date(fecha).getTime();
+      const diffMs  = Date.now() - new Date(fecha).getTime();
       const diffMin = Math.floor(diffMs / 60000);
-      if(diffMin < 1) return "Hace unos instantes";
-      return `Hace ${diffMin} minuto${diffMin > 1 ? 's' : ''}`;
+      if (diffMin < 1) return "Hace unos instantes";
+      return `Hace ${diffMin} min${diffMin > 1 ? '' : ''}`;
     }
 
+    // ── Crear tarjeta ──
     function crearOrderCard(key, data) {
-      const status = data.status ? data.status : "pending";
-      let statusClass = "status-pending";
-      let statusText = "Pendiente";
-      if(status === "completed") {
-        statusClass = "status-completed";
-        statusText = "Completado";
-      } else if(status === "cancelled") {
-        statusClass = "status-cancelled";
-        statusText = "Cancelado";
-      }
-      
+      const status = data.status || "pending";
+      let statusClass = "status-pending", statusText = "Pendiente";
+      if (status === "completed") { statusClass = "status-completed"; statusText = "Completado"; }
+      else if (status === "cancelled") { statusClass = "status-cancelled"; statusText = "Cancelado"; }
+
       let itemsHTML = "";
       if (Array.isArray(data.pedido)) {
         data.pedido.forEach(item => {
-          const nombre = item.name || "Producto";
-          const cantidad = item.qty || 1;
+          const nombre   = item.name  || "Producto";
+          const cantidad = item.qty   || 1;
           const precioItem = (item.price * cantidad).toFixed(2);
-          
+
           let detallesMenu = '';
-          if(item.menuSelections) {
+          if (item.menuSelections) {
             detallesMenu = Object.entries(item.menuSelections)
-              .map(([seccion, opcion]) => `<div style="font-size:0.8em;color:#666;">${seccion}: ${opcion}</div>`)
+              .map(([sec, op]) => `<div class="item-detail">${sec}: ${op}</div>`)
               .join('');
           }
-          
+
           let notasItem = '';
-          if(item.note) {
-            notasItem = `<div style="font-size:0.8em;color:#666;margin-top:4px;">Nota: ${item.note}</div>`;
+          if (item.note) {
+            notasItem = `<div class="item-note"><i class="fas fa-pencil-alt" style="font-size:0.6rem;"></i> ${item.note}</div>`;
           }
 
           itemsHTML += `
             <li class="order-item">
-              <div>
-                <div style="margin-bottom:4px;">${cantidad}x ${nombre}</div>
+              <div class="item-left">
+                <div class="item-name">
+                  <span class="item-qty">${cantidad}×</span>${nombre}
+                </div>
                 ${detallesMenu}
                 ${notasItem}
               </div>
-              <span>${precioItem}€</span>
-            </li>
-          `;
+              <span class="item-price">${precioItem}€</span>
+            </li>`;
         });
       }
-      
+
       const card = document.createElement('div');
       card.classList.add('order-card');
       card.setAttribute('data-status', status);
       card.setAttribute('data-key', key);
       card.innerHTML = `
-        <div class="order-status ${statusClass}">${statusText}</div>
-        <h2 class="order-table">${data.mesa || 'Mesa Desconocida'}</h2>
-        <div class="order-time">${timeAgo(data.fecha)}</div>
-        <ul class="order-items">
-          ${itemsHTML}
-        </ul>
-        ${data.notas ? `<div class="order-notes"><strong>Notas:</strong> ${data.notas}</div>` : ''}
+        <div class="card-head">
+          <div class="card-table">
+            <div class="table-icon"><i class="fas fa-chair"></i></div>
+            <span class="table-name">${data.mesa || 'Mesa Desconocida'}</span>
+          </div>
+          <div class="order-status ${statusClass}">${statusText}</div>
+        </div>
+        <div class="card-meta">
+          <i class="fas fa-clock"></i>
+          ${timeAgo(data.fecha)}
+        </div>
+        <ul class="order-items">${itemsHTML}</ul>
+        ${data.notas ? `<div class="order-notes"><strong>Nota:</strong> ${data.notas}</div>` : ''}
         <div class="order-actions">
           <button class="action-btn complete-btn" data-action="complete">
-            <i class="fas fa-check-circle mr-1"></i> Completar
+            <i class="fas fa-check"></i> Listo
           </button>
-                    <button class="action-btn cancel-btn" data-action="cancel">
-            <i class="fas fa-times-circle mr-1"></i> Cancelar
+          <button class="action-btn cancel-btn" data-action="cancel">
+            <i class="fas fa-times"></i> Cancelar
           </button>
           <button class="action-btn print-btn" data-action="print">
-            <i class="fas fa-print mr-1"></i> Imprimir
+            <i class="fas fa-print"></i> Imprimir
           </button>
-        </div>
-      `;
-      
-      const completeBtn = card.querySelector('[data-action="complete"]');
-      const cancelBtn = card.querySelector('[data-action="cancel"]');
-      const printBtn = card.querySelector('[data-action="print"]');
-      completeBtn.addEventListener('click', () => actualizarEstadoPedido(key, 'completed'));
-      cancelBtn.addEventListener('click', () => actualizarEstadoPedido(key, 'cancelled'));
-      printBtn.addEventListener('click', () => printReceipt(key, data));
-      
+        </div>`;
+
+      card.querySelector('[data-action="complete"]').addEventListener('click', () => actualizarEstadoPedido(key, 'completed'));
+      card.querySelector('[data-action="cancel"]').addEventListener('click', () => actualizarEstadoPedido(key, 'cancelled'));
+      card.querySelector('[data-action="print"]').addEventListener('click', () => printReceipt(key, data));
+
       return card;
     }
 
+    // ── Actualizar estado ──
     function actualizarEstadoPedido(key, nuevoEstado) {
       const pedidoRef = ref(db, 'pedidos/' + key);
-      // Actualización optimista del DOM
-      const card = document.querySelector(`.order-card[data-key="${key}"]`);
+      const card      = document.querySelector(`.order-card[data-key="${key}"]`);
       if (card) {
-        // Añadir efectos de transición
         card.style.transition = "all 0.5s ease";
-        
         setTimeout(() => {
           card.setAttribute('data-status', nuevoEstado);
-          const statusElement = card.querySelector('.order-status');
-          statusElement.className = `order-status status-${nuevoEstado}`;
-          statusElement.textContent = nuevoEstado === 'completed' ? 'Completado' 
-                               : nuevoEstado === 'cancelled' ? 'Cancelado' 
+          const statusEl = card.querySelector('.order-status');
+          statusEl.className = `order-status status-${nuevoEstado}`;
+          statusEl.textContent = nuevoEstado === 'completed' ? 'Completado'
+                               : nuevoEstado === 'cancelled' ? 'Cancelado'
                                : 'Pendiente';
-        
-          // Aplicar filtro inmediatamente con animación
-          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
-          if(currentFilter === 'all' || currentFilter === nuevoEstado) {
+
+          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
+          if (currentFilter === 'all' || currentFilter === nuevoEstado) {
             card.style.display = 'block';
             card.style.opacity = '1';
-            card.style.transform = 'scale(1)';
+            card.style.transform = '';
           } else {
             card.style.opacity = '0';
-            card.style.transform = 'scale(0.8)';
-            setTimeout(() => {
-              card.style.display = 'none';
-            }, 500);
+            card.style.transform = 'scale(0.85)';
+            setTimeout(() => { card.style.display = 'none'; }, 500);
           }
+          updateStats();
         }, 50);
       }
 
-      // Actualizar Firebase
       update(pedidoRef, { status: nuevoEstado }).catch(error => {
         console.error('Error al actualizar el estado:', error);
-        // Revertir cambios en caso de error
         if (card) {
           card.setAttribute('data-status', 'pending');
-          const statusElement = card.querySelector('.order-status');
-          statusElement.className = 'order-status status-pending';
-          statusElement.textContent = 'Pendiente';
-          filtrarPedidos(currentFilter);
+          const statusEl = card.querySelector('.order-status');
+          statusEl.className  = 'order-status status-pending';
+          statusEl.textContent = 'Pendiente';
+          const f = document.querySelector('.filter-btn.active')?.dataset.filter;
+          if (f) filtrarPedidos(f);
         }
       });
     }
 
+    // ── Agregar o actualizar pedido ──
     function agregarOActualizarPedido(key, data) {
       const existente = document.querySelector(`.order-card[data-key="${key}"]`);
+
+      // Si existe el empty-state, quitarlo
+      const emptyState = elements.ordersGrid.querySelector('.empty-state');
+      if (emptyState) emptyState.remove();
+
       const card = crearOrderCard(key, data);
-      
+
       if (existente) {
-        // Aplicar transición
         existente.style.opacity = '0';
-        existente.style.transform = 'scale(0.8)';
-        
+        existente.style.transform = 'scale(0.9)';
         setTimeout(() => {
           elements.ordersGrid.replaceChild(card, existente);
-          // Asegurarse de que se ve si corresponde al filtro actual
-          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
-          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
-            card.style.display = 'none';
-          }
+          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
+          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) card.style.display = 'none';
+          updateStats();
         }, 300);
       } else {
         card.style.opacity = '0';
         elements.ordersGrid.appendChild(card);
-        
-        // Aplicar transición de entrada
         setTimeout(() => {
           card.style.opacity = '1';
-          // Asegurarse de que se ve si corresponde al filtro actual
-          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
-          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
-            card.style.display = 'none';
-          }
+          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
+          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) card.style.display = 'none';
+          updateStats();
         }, 50);
       }
     }
-    
+
+    // ── Imprimir ──
     function printReceipt(key, data) {
       const printWindow = window.open('', '', 'height=600,width=400');
       printWindow.document.write('<html><head><title>Recibo de Pedido</title>');
-      printWindow.document.write('<style>body{font-family: Arial, sans-serif; padding: 20px;} h2{margin-bottom: 10px;} ul{list-style: none; padding: 0;} li{margin-bottom: 5px; padding: 5px 0; border-bottom: 1px solid #eee;}</style>');
+      printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;} h2{margin-bottom:10px;} ul{list-style:none;padding:0;} li{margin-bottom:5px;padding:5px 0;border-bottom:1px solid #eee;}</style>');
       printWindow.document.write('</head><body>');
       printWindow.document.write('<h2>Recibo de Pedido</h2>');
       printWindow.document.write('<p><strong>Mesa:</strong> ' + (data.mesa || 'Mesa Desconocida') + '</p>');
       printWindow.document.write('<p><strong>Fecha:</strong> ' + new Date(data.fecha).toLocaleString() + '</p>');
       printWindow.document.write('<ul>');
       if (Array.isArray(data.pedido)) {
-         data.pedido.forEach(item => {
-            const cantidad = item.qty || 1;
-            const nombre = item.name || 'Producto';
-            const precioTotal = (item.price * cantidad).toFixed(2);
-            let detalles = '';
-            if(item.menuSelections) {
-              detalles = Object.entries(item.menuSelections)
-                .map(([seccion, opcion]) => `<div>${seccion}: ${opcion}</div>`)
-                .join('');
-            }
-            printWindow.document.write(`
-              <li>
-                <div>${cantidad} x ${nombre} - ${precioTotal}€</div>
-                ${detalles}
-                ${item.note ? `<div>Nota: ${item.note}</div>` : ''}
-              </li>
-            `);
-         });
+        data.pedido.forEach(item => {
+          const cantidad    = item.qty  || 1;
+          const nombre      = item.name || 'Producto';
+          const precioTotal = (item.price * cantidad).toFixed(2);
+          let detalles = '';
+          if (item.menuSelections) {
+            detalles = Object.entries(item.menuSelections)
+              .map(([s, o]) => `<div>${s}: ${o}</div>`)
+              .join('');
+          }
+          printWindow.document.write(`<li>
+            <div>${cantidad} x ${nombre} - ${precioTotal}€</div>
+            ${detalles}
+            ${item.note ? `<div>Nota: ${item.note}</div>` : ''}
+          </li>`);
+        });
       }
       printWindow.document.write('</ul>');
-      if(data.notas) {
-          printWindow.document.write('<p><strong>Notas:</strong> ' + data.notas + '</p>');
-      }
+      if (data.notas) printWindow.document.write('<p><strong>Notas:</strong> ' + data.notas + '</p>');
       printWindow.document.write('</body></html>');
       printWindow.document.close();
       printWindow.focus();
@@ -1034,16 +1369,14 @@
       printWindow.close();
     }
 
-    // Listeners de Firebase
+    // ── Firebase listeners ──
     onChildAdded(pedidosRef, (snapshot) => {
-      const key = snapshot.key;
+      const key  = snapshot.key;
       const data = snapshot.val();
-      
-      if((!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
-        orderSound.play().catch(error => console.error("Error de sonido:", error));
+      if ((!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
+        orderSound.play().catch(e => console.error("Error de sonido:", e));
         lastSoundTime = Date.now();
       }
-      
       agregarOActualizarPedido(key, data);
     });
 
@@ -1054,36 +1387,22 @@
     onChildRemoved(pedidosRef, (snapshot) => {
       const existente = document.querySelector(`.order-card[data-key="${snapshot.key}"]`);
       if (existente) {
-        // Aplicar transición de salida
         existente.style.opacity = '0';
-        existente.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-          existente.remove();
-        }, 300);
+        existente.style.transform = 'scale(0.85)';
+        setTimeout(() => { existente.remove(); updateStats(); }, 300);
       }
     });
 
-    // Filtrado con animaciones mejoradas
+    // ── Filtros ──
     function updateFilters(newFilter) {
-      let filterText = "";
-      switch(newFilter) {
-        case 'all':
-          filterText = "Todos los pedidos";
-          break;
-        case 'pending':
-          filterText = "Pedidos pendientes";
-          break;
-        case 'completed':
-          filterText = "Pedidos completados";
-          break;
-        case 'cancelled':
-          filterText = "Pedidos cancelados";
-          break;
-      }
-      
+      let filterText = "Todos los pedidos";
+      if (newFilter === 'pending')   filterText = "Pedidos pendientes";
+      if (newFilter === 'completed') filterText = "Pedidos completados";
+      if (newFilter === 'cancelled') filterText = "Pedidos cancelados";
+
       elements.currentFilter.textContent = filterText;
       elements.filterIndicator.classList.add('active');
-      
+
       elements.filterButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.filter === newFilter);
       });
@@ -1101,8 +1420,7 @@
         if (filtro === 'all' || card.dataset.status === filtro) {
           card.classList.add('sorting-animation');
           card.style.opacity = '0';
-          card.style.transform = 'translateY(20px)';
-          
+          card.style.transform = 'translateY(12px)';
           setTimeout(() => {
             card.style.display = 'block';
             setTimeout(() => {
@@ -1113,17 +1431,42 @@
         } else {
           card.classList.add('sorting-animation');
           card.style.opacity = '0';
-          card.style.transform = 'translateY(-20px)';
-          
-          setTimeout(() => {
-            card.style.display = 'none';
-          }, 300);
+          card.style.transform = 'translateY(-12px)';
+          setTimeout(() => { card.style.display = 'none'; }, 300);
         }
       });
     }
-    
-    // Inicializar con "Todos" como filtro activo
+
     updateFilters('all');
+    updateStats();
+
+    // ── Tema oscuro / claro ──
+    const themeBtn  = document.getElementById('themeToggle');
+    const htmlEl    = document.documentElement;
+    let isDark = localStorage.getItem('theme') === 'dark';
+
+    function applyTheme() {
+      if (isDark) {
+        htmlEl.setAttribute('data-theme', 'dark');
+        themeBtn.querySelector('i').className = 'fas fa-sun';
+        themeBtn.title = 'Modo claro';
+      } else {
+        htmlEl.removeAttribute('data-theme');
+        themeBtn.querySelector('i').className = 'fas fa-moon';
+        themeBtn.title = 'Modo oscuro';
+      }
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    }
+
+    themeBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      applyTheme();
+    });
+
+    applyTheme();
+
+    // ── Actualizar el reloj de "última actualización" cada minuto ──
+    setInterval(updateStats, 60000);
   </script>
 </body>
 </html>
