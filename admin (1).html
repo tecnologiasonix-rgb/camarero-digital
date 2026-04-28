@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Administración</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --success-color: #27ae60;
+      --warning-color: #f1c40f;
+      --danger-color: #e74c3c;
+      --light-color: #ecf0f1;
+      --text-color: #333;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --border-radius: 8px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f5f5;
+      color: var(--text-color);
+    }
+
+    .admin-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .admin-header {
+      position: relative;
+      text-align: center;
+      padding: 2rem;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: var(--border-radius);
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .header-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 15px;
+      border: none;
+      border-radius: 20px;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    #deleteAllBtn {
+      background: var(--warning-color);
+    }
+
+    #deleteAllBtn:hover {
+      background: #d39e00;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      background-color: var(--light-color);
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .filter-btn::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 3px;
+      background-color: var(--primary-color);
+      transition: width 0.3s ease;
+    }
+
+    .filter-btn:hover::before {
+      width: 100%;
+    }
+
+    .filter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .filter-btn.active {
+      background-color: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    .filter-btn.active::before {
+      width: 100%;
+      background-color: var(--secondary-color);
+    }
+
+    .filters-select {
+      display: none;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 1rem;
+      border: 2px solid var(--primary-color);
+      border-radius: var(--border-radius);
+      background: white;
+      font-size: 1rem;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232c3e50'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 24px;
+      cursor: pointer;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .filters-select:focus {
+      border-color: var(--secondary-color);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+      outline: none;
+    }
+
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .order-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-left: 4px solid transparent;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .order-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+
+    .order-card[data-status="pending"] {
+      border-left-color: var(--warning-color);
+    }
+
+    .order-card[data-status="completed"] {
+      border-left-color: var(--success-color);
+    }
+
+    .order-card[data-status="cancelled"] {
+      border-left-color: var(--danger-color);
+    }
+
+    .order-status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 5px 15px;
+      border-radius: var(--border-radius);
+      font-size: 0.8rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .status-pending {
+      background-color: var(--warning-color);
+      color: var(--text-color);
+    }
+
+    .status-completed {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .status-cancelled {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .order-table {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .order-table::before {
+      content: '\f2e7';
+      font-family: 'Font Awesome 5 Free';
+      font-weight: 900;
+      margin-right: 10px;
+      color: var(--secondary-color);
+    }
+
+    .order-time {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+
+    .order-time::before {
+      content: '\f017';
+      font-family: 'Font Awesome 5 Free';
+      font-weight: 900;
+      margin-right: 5px;
+      color: #888;
+    }
+
+    .order-items {
+      list-style: none;
+      margin-bottom: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 5px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--secondary-color) #eee;
+    }
+
+    .order-items::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .order-items::-webkit-scrollbar-track {
+      background: #eee;
+      border-radius: 10px;
+    }
+
+    .order-items::-webkit-scrollbar-thumb {
+      background-color: var(--secondary-color);
+      border-radius: 10px;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      transition: background-color 0.2s ease;
+    }
+
+    .order-item:hover {
+      background-color: rgba(52, 152, 219, 0.05);
+    }
+
+    .order-notes {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      margin-top: 10px;
+      font-size: 0.9rem;
+      border-left: 3px solid var(--secondary-color);
+      transition: all 0.3s ease;
+    }
+
+    .order-notes:hover {
+      background-color: #edf2f7;
+      transform: translateX(2px);
+    }
+
+    .order-actions {
+      margin-top: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-btn {
+      padding: 10px 8px;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-btn::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: -100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+
+    .action-btn:hover::after {
+      left: 100%;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .action-btn:active {
+      transform: translateY(1px);
+    }
+
+    .complete-btn {
+      background-color: var(--success-color);
+      color: white;
+    }
+
+    .complete-btn:hover {
+      background-color: #219653;
+    }
+
+    .cancel-btn {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .cancel-btn:hover {
+      background-color: #c0392b;
+    }
+
+    .print-btn {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+
+    .print-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .login-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+    }
+
+    .confirm-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+    }
+
+    .confirm-content {
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: modalFadeIn 0.3s ease;
+    }
+
+    .confirm-buttons {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .login-content {
+      background: white;
+      padding: 30px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      max-width: 300px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: modalFadeIn 0.3s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-content h2 {
+      margin-bottom: 20px;
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    .login-content h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 3px;
+      background-color: var(--secondary-color);
+    }
+
+    .login-content input {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .login-content input:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
+    }
+
+    .login-content button {
+      padding: 12px 30px;
+      font-size: 1rem;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-content button::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: -100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: 0.5s;
+    }
+
+    .login-content button:hover::after {
+      left: 100%;
+    }
+
+    .login-content button:hover {
+      background: var(--secondary-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .login-error {
+      color: var(--danger-color);
+      margin-top: 15px;
+      font-weight: bold;
+      display: none;
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    @media (max-width: 768px) {
+      .filters {
+        display: none;
+      }
+      
+      .filters-select {
+        display: block;
+      }
+      
+      .logout-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+      }
+
+      .logout-btn span {
+        display: none;
+      }
+
+      .header-controls {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        position: static;
+        margin-top: 15px;
+      }
+
+      .admin-container {
+        padding: 10px;
+      }
+
+      .admin-header {
+        padding: 1.5rem;
+      }
+
+      .order-table {
+        font-size: 1.3rem;
+      }
+
+      .order-time, .order-item, .order-notes, .action-btn {
+        font-size: 0.8rem;
+      }
+
+      .order-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .filters-select {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .filters {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .filter-btn {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+
+      .orders-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-header {
+        padding: 1rem;
+      }
+    }
+
+    /* Estilos de clasificación */
+    .sorting-animation {
+      transition: all 0.5s ease;
+    }
+
+    .filter-btn.active {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(52, 152, 219, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+    }
+
+    .filter-indicator {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+    }
+
+    .filter-indicator.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="loginModal" class="login-modal">
+    <div class="login-content">
+      <h2>Acceso Administrador</h2>
+      <input type="password" id="adminPinInput" placeholder="🔒 Ingrese su PIN">
+      <button id="loginBtn">Ingresar</button>
+      <p id="loginError" class="login-error">PIN incorrecto</p>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="confirm-modal">
+    <div class="confirm-content">
+      <h2>¿Está seguro de borrar todos los pedidos?</h2>
+      <p>Esta acción es irreversible y eliminará todos los pedidos de Firebase.</p>
+      <div class="confirm-buttons">
+        <button id="confirmDelete" class="action-btn cancel-btn">Borrar Todo</button>
+        <button id="cancelDelete" class="action-btn print-btn">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="admin-container">
+    <header class="admin-header">
+      <h1 class="text-2xl font-bold mb-2">Panel de Administración</h1>
+      <p>Pedidos en tiempo real</p>
+      <div class="header-controls">
+        <button id="deleteAllBtn" class="logout-btn">
+          <i class="fas fa-trash-alt"></i> <span>Borrar Todo</span>
+        </button>
+        <button id="soundToggle" class="logout-btn">
+          <i class="fas fa-bell"></i> <span>Sonido: ON</span>
+        </button>
+        <button id="logoutBtn" class="logout-btn">
+          <i class="fa fa-sign-out-alt"></i> <span>Cerrar sesión</span>
+        </button>
+      </div>
+    </header>
+
+    <select class="filters-select" id="mobileFilters">
+      <option value="all">Todos los pedidos</option>
+      <option value="pending">Pendientes</option>
+      <option value="completed">Completados</option>
+      <option value="cancelled">Cancelados</option>
+    </select>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="pending">Pendientes</button>
+      <button class="filter-btn" data-filter="completed">Completados</button>
+      <button class="filter-btn" data-filter="cancelled">Cancelados</button>
+    </div>
+    
+    <div id="filterIndicator" class="filter-indicator">
+      Mostrando: <span id="currentFilter">Todos los pedidos</span>
+    </div>
+    
+    <div class="orders-grid" id="ordersGrid"></div>
+  </div>
+
+  <audio id="orderSound" src="https://github.com/Onixmanager/Prueba2-CamareroDigital/raw/refs/heads/main/notificacion1.mp3" preload="auto"></audio>
+
+  <script type="module">
+    const adminPIN = "adminadmin";
+    const sessionKey = "adminSession";
+    const elements = {
+      loginModal: document.getElementById("loginModal"),
+      adminPinInput: document.getElementById("adminPinInput"),
+      loginBtn: document.getElementById("loginBtn"),
+      loginError: document.getElementById("loginError"),
+      logoutBtn: document.getElementById("logoutBtn"),
+      deleteAllBtn: document.getElementById("deleteAllBtn"),
+      confirmModal: document.getElementById("confirmModal"),
+      confirmDelete: document.getElementById("confirmDelete"),
+      cancelDelete: document.getElementById("cancelDelete"),
+      soundToggle: document.getElementById("soundToggle"),
+      mobileFilters: document.getElementById("mobileFilters"),
+      filterButtons: document.querySelectorAll('.filter-btn'),
+      ordersGrid: document.getElementById('ordersGrid'),
+      filterIndicator: document.getElementById('filterIndicator'),
+      currentFilter: document.getElementById('currentFilter')
+    };
+
+    // Control de sonido
+    let soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
+    let lastSoundTime = 0;
+
+    function updateSoundIcon() {
+      const icon = elements.soundToggle.querySelector('i');
+      const text = elements.soundToggle.querySelector('span');
+      icon.className = soundEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
+      text.textContent = soundEnabled ? 'Sonido: ON' : 'Sonido: OFF';
+    }
+
+    elements.soundToggle.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('soundEnabled', soundEnabled);
+      updateSoundIcon();
+    });
+    updateSoundIcon();
+
+    // Autenticación
+    function showLoginModal() {
+      elements.loginModal.style.display = "flex";
+    }
+
+    function hideLoginModal() {
+      elements.loginModal.style.display = "none";
+    }
+
+    function checkAuth() {
+      localStorage.getItem(sessionKey) === "true" ? hideLoginModal() : showLoginModal();
+    }
+
+    elements.loginBtn.addEventListener("click", () => {
+      if (elements.adminPinInput.value === adminPIN) {
+        localStorage.setItem(sessionKey, "true");
+        hideLoginModal();
+      } else {
+        elements.loginError.style.display = "block";
+        // Reiniciar la animación
+        elements.loginError.style.animation = 'none';
+        setTimeout(() => {
+          elements.loginError.style.animation = 'shake 0.5s ease';
+        }, 10);
+      }
+    });
+    
+    // Permitir login con Enter
+    elements.adminPinInput.addEventListener("keyup", (event) => {
+      if (event.key === "Enter") {
+        elements.loginBtn.click();
+      }
+    });
+
+    elements.logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem(sessionKey);
+      location.reload();
+    });
+
+    checkAuth();
+
+    // Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, get, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzZBL-GfbxbWtPzMHOkSgnfF0UXD7wt4Y",
+      authDomain: "pruebacamarero-b7f54.firebaseapp.com",
+      databaseURL: "https://pruebacamarero-b7f54-default-rtdb.europe-west1.firebasedatabase.app/",
+      projectId: "pruebacamarero-b7f54",
+      storageBucket: "pruebacamarero-b7f54.firebasestorage.app",
+      messagingSenderId: "191387429666",
+      appId: "1:191387429666:web:ae8472198e543c6de5d37b",
+      measurementId: "G-KXDVQLNQW2"
+    };
+
+    const appFirebase = initializeApp(firebaseConfig);
+    const db = getDatabase(appFirebase);
+    const pedidosRef = ref(db, 'pedidos');
+    const orderSound = document.getElementById('orderSound');
+
+    // Funciones de pedidos
+    async function borrarTodosLosPedidos() {
+      try {
+        // Usar remove() directamente en la referencia de pedidos para eliminar todo
+        await remove(pedidosRef);
+        console.log("Todos los pedidos han sido eliminados permanentemente");
+        
+        // Mostrar mensaje de éxito
+        alert("Todos los pedidos han sido eliminados correctamente");
+        
+        // Limpiar la interfaz
+        elements.ordersGrid.innerHTML = '';
+      } catch (error) {
+        console.error('Error al borrar pedidos:', error);
+        alert("Error al eliminar los pedidos: " + error.message);
+      }
+    }
+
+    // Manejo de modales
+    elements.deleteAllBtn.addEventListener('click', () => {
+      elements.confirmModal.style.display = 'flex';
+    });
+
+    elements.cancelDelete.addEventListener('click', () => {
+      elements.confirmModal.style.display = 'none';
+    });
+
+    elements.confirmDelete.addEventListener('click', async () => {
+      elements.confirmModal.style.display = 'none';
+      await borrarTodosLosPedidos();
+    });
+
+    // Funciones de tiempo y creación de tarjetas
+    function timeAgo(fecha) {
+      const diffMs = Date.now() - new Date(fecha).getTime();
+      const diffMin = Math.floor(diffMs / 60000);
+      if(diffMin < 1) return "Hace unos instantes";
+      return `Hace ${diffMin} minuto${diffMin > 1 ? 's' : ''}`;
+    }
+
+    function crearOrderCard(key, data) {
+      const status = data.status ? data.status : "pending";
+      let statusClass = "status-pending";
+      let statusText = "Pendiente";
+      if(status === "completed") {
+        statusClass = "status-completed";
+        statusText = "Completado";
+      } else if(status === "cancelled") {
+        statusClass = "status-cancelled";
+        statusText = "Cancelado";
+      }
+      
+      let itemsHTML = "";
+      if (Array.isArray(data.pedido)) {
+        data.pedido.forEach(item => {
+          const nombre = item.name || "Producto";
+          const cantidad = item.qty || 1;
+          const precioItem = (item.price * cantidad).toFixed(2);
+          
+          let detallesMenu = '';
+          if(item.menuSelections) {
+            detallesMenu = Object.entries(item.menuSelections)
+              .map(([seccion, opcion]) => `<div style="font-size:0.8em;color:#666;">${seccion}: ${opcion}</div>`)
+              .join('');
+          }
+          
+          let notasItem = '';
+          if(item.note) {
+            notasItem = `<div style="font-size:0.8em;color:#666;margin-top:4px;">Nota: ${item.note}</div>`;
+          }
+
+          itemsHTML += `
+            <li class="order-item">
+              <div>
+                <div style="margin-bottom:4px;">${cantidad}x ${nombre}</div>
+                ${detallesMenu}
+                ${notasItem}
+              </div>
+              <span>${precioItem}€</span>
+            </li>
+          `;
+        });
+      }
+      
+      const card = document.createElement('div');
+      card.classList.add('order-card');
+      card.setAttribute('data-status', status);
+      card.setAttribute('data-key', key);
+      card.innerHTML = `
+        <div class="order-status ${statusClass}">${statusText}</div>
+        <h2 class="order-table">${data.mesa || 'Mesa Desconocida'}</h2>
+        <div class="order-time">${timeAgo(data.fecha)}</div>
+        <ul class="order-items">
+          ${itemsHTML}
+        </ul>
+        ${data.notas ? `<div class="order-notes"><strong>Notas:</strong> ${data.notas}</div>` : ''}
+        <div class="order-actions">
+          <button class="action-btn complete-btn" data-action="complete">
+            <i class="fas fa-check-circle mr-1"></i> Completar
+          </button>
+                    <button class="action-btn cancel-btn" data-action="cancel">
+            <i class="fas fa-times-circle mr-1"></i> Cancelar
+          </button>
+          <button class="action-btn print-btn" data-action="print">
+            <i class="fas fa-print mr-1"></i> Imprimir
+          </button>
+        </div>
+      `;
+      
+      const completeBtn = card.querySelector('[data-action="complete"]');
+      const cancelBtn = card.querySelector('[data-action="cancel"]');
+      const printBtn = card.querySelector('[data-action="print"]');
+      completeBtn.addEventListener('click', () => actualizarEstadoPedido(key, 'completed'));
+      cancelBtn.addEventListener('click', () => actualizarEstadoPedido(key, 'cancelled'));
+      printBtn.addEventListener('click', () => printReceipt(key, data));
+      
+      return card;
+    }
+
+    function actualizarEstadoPedido(key, nuevoEstado) {
+      const pedidoRef = ref(db, 'pedidos/' + key);
+      // Actualización optimista del DOM
+      const card = document.querySelector(`.order-card[data-key="${key}"]`);
+      if (card) {
+        // Añadir efectos de transición
+        card.style.transition = "all 0.5s ease";
+        
+        setTimeout(() => {
+          card.setAttribute('data-status', nuevoEstado);
+          const statusElement = card.querySelector('.order-status');
+          statusElement.className = `order-status status-${nuevoEstado}`;
+          statusElement.textContent = nuevoEstado === 'completed' ? 'Completado' 
+                               : nuevoEstado === 'cancelled' ? 'Cancelado' 
+                               : 'Pendiente';
+        
+          // Aplicar filtro inmediatamente con animación
+          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
+          if(currentFilter === 'all' || currentFilter === nuevoEstado) {
+            card.style.display = 'block';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+          } else {
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              card.style.display = 'none';
+            }, 500);
+          }
+        }, 50);
+      }
+
+      // Actualizar Firebase
+      update(pedidoRef, { status: nuevoEstado }).catch(error => {
+        console.error('Error al actualizar el estado:', error);
+        // Revertir cambios en caso de error
+        if (card) {
+          card.setAttribute('data-status', 'pending');
+          const statusElement = card.querySelector('.order-status');
+          statusElement.className = 'order-status status-pending';
+          statusElement.textContent = 'Pendiente';
+          filtrarPedidos(currentFilter);
+        }
+      });
+    }
+
+    function agregarOActualizarPedido(key, data) {
+      const existente = document.querySelector(`.order-card[data-key="${key}"]`);
+      const card = crearOrderCard(key, data);
+      
+      if (existente) {
+        // Aplicar transición
+        existente.style.opacity = '0';
+        existente.style.transform = 'scale(0.8)';
+        
+        setTimeout(() => {
+          elements.ordersGrid.replaceChild(card, existente);
+          // Asegurarse de que se ve si corresponde al filtro actual
+          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
+          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
+            card.style.display = 'none';
+          }
+        }, 300);
+      } else {
+        card.style.opacity = '0';
+        elements.ordersGrid.appendChild(card);
+        
+        // Aplicar transición de entrada
+        setTimeout(() => {
+          card.style.opacity = '1';
+          // Asegurarse de que se ve si corresponde al filtro actual
+          const currentFilter = document.querySelector('.filter-btn.active').dataset.filter;
+          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
+            card.style.display = 'none';
+          }
+        }, 50);
+      }
+    }
+    
+    function printReceipt(key, data) {
+      const printWindow = window.open('', '', 'height=600,width=400');
+      printWindow.document.write('<html><head><title>Recibo de Pedido</title>');
+      printWindow.document.write('<style>body{font-family: Arial, sans-serif; padding: 20px;} h2{margin-bottom: 10px;} ul{list-style: none; padding: 0;} li{margin-bottom: 5px; padding: 5px 0; border-bottom: 1px solid #eee;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write('<h2>Recibo de Pedido</h2>');
+      printWindow.document.write('<p><strong>Mesa:</strong> ' + (data.mesa || 'Mesa Desconocida') + '</p>');
+      printWindow.document.write('<p><strong>Fecha:</strong> ' + new Date(data.fecha).toLocaleString() + '</p>');
+      printWindow.document.write('<ul>');
+      if (Array.isArray(data.pedido)) {
+         data.pedido.forEach(item => {
+            const cantidad = item.qty || 1;
+            const nombre = item.name || 'Producto';
+            const precioTotal = (item.price * cantidad).toFixed(2);
+            let detalles = '';
+            if(item.menuSelections) {
+              detalles = Object.entries(item.menuSelections)
+                .map(([seccion, opcion]) => `<div>${seccion}: ${opcion}</div>`)
+                .join('');
+            }
+            printWindow.document.write(`
+              <li>
+                <div>${cantidad} x ${nombre} - ${precioTotal}€</div>
+                ${detalles}
+                ${item.note ? `<div>Nota: ${item.note}</div>` : ''}
+              </li>
+            `);
+         });
+      }
+      printWindow.document.write('</ul>');
+      if(data.notas) {
+          printWindow.document.write('<p><strong>Notas:</strong> ' + data.notas + '</p>');
+      }
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+
+    // Listeners de Firebase
+    onChildAdded(pedidosRef, (snapshot) => {
+      const key = snapshot.key;
+      const data = snapshot.val();
+      
+      if((!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
+        orderSound.play().catch(error => console.error("Error de sonido:", error));
+        lastSoundTime = Date.now();
+      }
+      
+      agregarOActualizarPedido(key, data);
+    });
+
+    onChildChanged(pedidosRef, (snapshot) => {
+      agregarOActualizarPedido(snapshot.key, snapshot.val());
+    });
+
+    onChildRemoved(pedidosRef, (snapshot) => {
+      const existente = document.querySelector(`.order-card[data-key="${snapshot.key}"]`);
+      if (existente) {
+        // Aplicar transición de salida
+        existente.style.opacity = '0';
+        existente.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+          existente.remove();
+        }, 300);
+      }
+    });
+
+    // Filtrado con animaciones mejoradas
+    function updateFilters(newFilter) {
+      let filterText = "";
+      switch(newFilter) {
+        case 'all':
+          filterText = "Todos los pedidos";
+          break;
+        case 'pending':
+          filterText = "Pedidos pendientes";
+          break;
+        case 'completed':
+          filterText = "Pedidos completados";
+          break;
+        case 'cancelled':
+          filterText = "Pedidos cancelados";
+          break;
+      }
+      
+      elements.currentFilter.textContent = filterText;
+      elements.filterIndicator.classList.add('active');
+      
+      elements.filterButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === newFilter);
+      });
+      elements.mobileFilters.value = newFilter;
+      filtrarPedidos(newFilter);
+    }
+
+    elements.mobileFilters.addEventListener('change', (e) => updateFilters(e.target.value));
+    elements.filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => updateFilters(btn.dataset.filter));
+    });
+
+    function filtrarPedidos(filtro) {
+      document.querySelectorAll('.order-card').forEach(card => {
+        if (filtro === 'all' || card.dataset.status === filtro) {
+          card.classList.add('sorting-animation');
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+            card.style.display = 'block';
+            setTimeout(() => {
+              card.style.opacity = '1';
+              card.style.transform = 'translateY(0)';
+            }, 50);
+          }, 300);
+        } else {
+          card.classList.add('sorting-animation');
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(-20px)';
+          
+          setTimeout(() => {
+            card.style.display = 'none';
+          }, 300);
+        }
+      });
+    }
+    
+    // Inicializar con "Todos" como filtro activo
+    updateFilters('all');
+  </script>
+</body>
+</html>
