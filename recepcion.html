@@ -1143,7 +1143,7 @@
 
     // ── Firebase (importado desde app.js) ──
     import { db } from "./app.js";
-    import { ref, onChildAdded, onChildChanged, onChildRemoved, update, remove }
+    import { ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get }
       from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const pedidosRef  = ref(db, 'pedidos');
@@ -1404,16 +1404,20 @@
     }
 
     // ── Firebase listeners ──
+    let cargaInicial = true;
     onChildAdded(pedidosRef, (snapshot) => {
       const key  = snapshot.key;
       const data = snapshot.val();
-      if ((!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
+      if (!cargaInicial && (!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
         orderSound.play().catch(() => {});
         lastSoundTime = Date.now();
       }
       agregarOActualizarPedido(key, data);
       registrarActividad();
     });
+
+    // Cuando Firebase termina de enviar los pedidos existentes, activamos el sonido
+    get(pedidosRef).then(() => { cargaInicial = false; });
 
     onChildChanged(pedidosRef, (snapshot) => {
       agregarOActualizarPedido(snapshot.key, snapshot.val());
