@@ -730,8 +730,8 @@
     @media (max-width: 640px) {
       .panel-container { padding: 1.2rem 0.9rem 4rem; }
       .panel-header { margin-bottom: 1.2rem; }
-      th:nth-child(3), td:nth-child(3),
-      th:nth-child(4), td:nth-child(4) { display: none; }
+      th:nth-child(4), td:nth-child(4),
+      th:nth-child(5), td:nth-child(5) { display: none; }
       .table-search { max-width: 100%; }
     }
 
@@ -946,9 +946,9 @@
        Sustituye Google Apps Script (fetchGET/fetchPOST) e Imgur
   ══════════════════════════════════════════════════════════════ -->
   <script type="module">
-    import { initializeApp }           from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, get,
-             set, push, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+             set, push, remove }            from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     // ─────────────────────────────────────────────────────────────
     // ① CONFIGURACIÓN  ← Rellena con tus credenciales reales
@@ -973,7 +973,7 @@
     // ─────────────────────────────────────────────────────────────
     // ② INICIALIZACIÓN FIREBASE
     // ─────────────────────────────────────────────────────────────
-    const fbApp = initializeApp(firebaseConfig);
+    const fbApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
     const db    = getDatabase(fbApp);
 
     // ─────────────────────────────────────────────────────────────
@@ -1075,10 +1075,12 @@
     }
 
     /**
-     * Actualiza un producto existente (sobreescribe los campos).
+     * Actualiza un producto existente sobreescribiendo el nodo completo.
+     * Usamos set() en lugar de update() para que campos eliminados (ej: menuOptions→null)
+     * desaparezcan realmente de Firebase y no queden huérfanos.
      */
     async function updateProductoFB(id, data) {
-      await update(ref(db, `productos/${id}`), data);
+      await set(ref(db, `productos/${id}`), data);
     }
 
     /**
@@ -1125,8 +1127,10 @@
         const thumbHtml = p.image
           ? `<img class="td-thumb" src="${escHtml(p.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
           : `<div class="td-thumb-placeholder"><i class="fas fa-image"></i></div>`;
-        // Botón de edición abre el modal correcto según el tipo
-        const editFn = isMenu ? `editMenu('${p.id}')` : `editProduct('${p.id}')`;
+
+        // Usamos data-* en vez de onclick="..." para evitar dependencia del scope global.
+        // El listener está en el contenedor (event delegation) más abajo.
+        const editAction = isMenu ? 'edit-menu' : 'edit-product';
 
         html += `<tr>
           <td>${thumbHtml}</td>
@@ -1138,10 +1142,10 @@
             ${isMenu ? 'Menú' : 'Producto'}
           </span></td>
           <td class="action-buttons">
-            <button class="btn btn-sm btn-edit" onclick="${editFn}">
+            <button class="btn btn-sm btn-edit"   data-action="${editAction}" data-id="${escHtml(p.id)}">
               <i class="fas fa-pen"></i> Editar
             </button>
-            <button class="btn btn-sm btn-danger" onclick="confirmDelete('${p.id}')">
+            <button class="btn btn-sm btn-danger" data-action="delete"        data-id="${escHtml(p.id)}">
               <i class="fas fa-trash"></i>
             </button>
           </td>
@@ -1153,7 +1157,22 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // ⑧ BÚSQUEDA
+    // ⑧ EVENT DELEGATION — Editar / Eliminar desde la tabla
+    //    Un solo listener en el contenedor captura todos los clics.
+    //    Evita el patrón frágil window.editProduct = ... que falla
+    //    si el módulo no termina de cargarse o hay múltiples instancias.
+    // ─────────────────────────────────────────────────────────────
+    document.getElementById('adminTableContainer').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const { action, id } = btn.dataset;
+      if      (action === 'edit-product') editProduct(id);
+      else if (action === 'edit-menu')    editMenu(id);
+      else if (action === 'delete')       confirmDelete(id);
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // ⑨ BÚSQUEDA
     // ─────────────────────────────────────────────────────────────
     document.getElementById('searchInput').addEventListener('input', e => {
       searchTerm = e.target.value.trim().toLowerCase();
@@ -1513,14 +1532,6 @@
 
     themeBtn.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
     applyTheme();
-
-    // ─────────────────────────────────────────────────────────────
-    // ⑭ EXPONER funciones usadas en onclick del HTML generado
-    //    Necesario porque <script type="module"> tiene scope privado
-    // ─────────────────────────────────────────────────────────────
-    window.editProduct   = editProduct;
-    window.editMenu      = editMenu;
-    window.confirmDelete = confirmDelete;
 
   </script>
 </body>
