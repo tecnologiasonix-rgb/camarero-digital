@@ -57,7 +57,25 @@ export async function cargarProductos() {
     });
   });
 
-  return productos.filter(p => p.name);
+  return productos
+    .filter(p => p.name)
+    .sort((a, b) => {
+      // 1. Ordena por categoría (los Menús siempre al final)
+      const aIsMenu = a.category === 'Menu' ? 1 : 0;
+      const bIsMenu = b.category === 'Menu' ? 1 : 0;
+      if (aIsMenu !== bIsMenu) return aIsMenu - bIsMenu;
+
+      // 2. Dentro de la misma categoría, por nombre de categoría
+      const catCmp = a.category.localeCompare(b.category, 'es');
+      if (catCmp !== 0) return catCmp;
+
+      // 3. Dentro de la misma categoría, por subcategoría
+      const subCmp = (a.subcategory || '').localeCompare(b.subcategory || '', 'es');
+      if (subCmp !== 0) return subCmp;
+
+      // 4. Por nombre de producto (alfabético)
+      return a.name.localeCompare(b.name, 'es');
+    });
 }
 
 export { firebaseConfig, db };
