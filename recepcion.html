@@ -1040,9 +1040,13 @@
 
   <audio id="orderSound" src="https://github.com/Onixmanager/Prueba2-CamareroDigital/raw/refs/heads/main/notificacion1.mp3" preload="auto"></audio>
 
-  <!-- ══ LÓGICA — SIN CAMBIOS ══ -->
+  <!-- ══ LÓGICA ══ -->
   <script type="module">
-    const adminPIN  = "adminadmin";
+    // ─────────────────────────────────────────────
+    // ★ CONFIGURA TU PIN AQUÍ ★
+    const ADMIN_PIN = "adminadmin";
+    // ─────────────────────────────────────────────
+
     const sessionKey = "adminSession";
     const elements = {
       loginModal:     document.getElementById("loginModal"),
@@ -1061,6 +1065,34 @@
       filterIndicator:document.getElementById('filterIndicator'),
       currentFilter:  document.getElementById('currentFilter')
     };
+
+    // ── Toast (reemplaza alert / console.error) ──
+    function showToast(msg, type = 'info') {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      const colors = { info: '#2D9B6F', error: '#D94F3D', warn: '#E8922A' };
+      Object.assign(t.style, {
+        position: 'fixed', bottom: '24px', left: '50%',
+        transform: 'translateX(-50%) translateY(20px)',
+        background: colors[type] || colors.info,
+        color: '#fff', padding: '10px 20px',
+        borderRadius: '8px', fontFamily: 'Mulish,sans-serif',
+        fontSize: '0.88rem', fontWeight: '600',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+        zIndex: '99999', opacity: '0',
+        transition: 'all 0.3s ease', pointerEvents: 'none'
+      });
+      document.body.appendChild(t);
+      requestAnimationFrame(() => {
+        t.style.opacity = '1';
+        t.style.transform = 'translateX(-50%) translateY(0)';
+      });
+      setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => t.remove(), 350);
+      }, 3000);
+    }
 
     // ── Sonido ──
     let soundEnabled  = localStorage.getItem('soundEnabled') !== 'false';
@@ -1088,7 +1120,7 @@
     }
 
     elements.loginBtn.addEventListener("click", () => {
-      if (elements.adminPinInput.value === adminPIN) {
+      if (elements.adminPinInput.value === ADMIN_PIN) {
         localStorage.setItem(sessionKey, "true");
         hideLoginModal();
       } else {
@@ -1109,23 +1141,11 @@
 
     checkAuth();
 
-    // ── Firebase ──
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, get, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    // ── Firebase (importado desde app.js) ──
+    import { db } from "./app.js";
+    import { ref, onChildAdded, onChildChanged, onChildRemoved, update, remove }
+      from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey:            "AIzaSyCzZBL-GfbxbWtPzMHOkSgnfF0UXD7wt4Y",
-      authDomain:        "pruebacamarero-b7f54.firebaseapp.com",
-      databaseURL:       "https://pruebacamarero-b7f54-default-rtdb.europe-west1.firebasedatabase.app/",
-      projectId:         "pruebacamarero-b7f54",
-      storageBucket:     "pruebacamarero-b7f54.firebasestorage.app",
-      messagingSenderId: "191387429666",
-      appId:             "1:191387429666:web:ae8472198e543c6de5d37b",
-      measurementId:     "G-KXDVQLNQW2"
-    };
-
-    const appFirebase = initializeApp(firebaseConfig);
-    const db          = getDatabase(appFirebase);
     const pedidosRef  = ref(db, 'pedidos');
     const orderSound  = document.getElementById('orderSound');
 
@@ -1155,12 +1175,11 @@
     async function borrarTodosLosPedidos() {
       try {
         await remove(pedidosRef);
-        alert("Todos los pedidos han sido eliminados correctamente");
         elements.ordersGrid.innerHTML = '';
         updateStats();
-      } catch (error) {
-        console.error('Error al borrar pedidos:', error);
-        alert("Error al eliminar los pedidos: " + error.message);
+        showToast('Todos los pedidos eliminados', 'info');
+      } catch {
+        showToast('Error al eliminar los pedidos', 'error');
       }
     }
 
@@ -1288,8 +1307,7 @@
         }, 50);
       }
 
-      update(pedidoRef, { status: nuevoEstado }).catch(error => {
-        console.error('Error al actualizar el estado:', error);
+      update(pedidoRef, { status: nuevoEstado }).catch(() => {
         if (card) {
           card.setAttribute('data-status', 'pending');
           const statusEl = card.querySelector('.order-status');
@@ -1298,6 +1316,7 @@
           const f = document.querySelector('.filter-btn.active')?.dataset.filter;
           if (f) filtrarPedidos(f);
         }
+        showToast('Error al actualizar el pedido', 'error');
       });
     }
 
@@ -1374,7 +1393,7 @@
       const key  = snapshot.key;
       const data = snapshot.val();
       if ((!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
-        orderSound.play().catch(e => console.error("Error de sonido:", e));
+        orderSound.play().catch(() => {});
         lastSoundTime = Date.now();
       }
       agregarOActualizarPedido(key, data);
