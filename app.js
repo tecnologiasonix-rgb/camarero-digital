@@ -2,21 +2,24 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
+
 // CONFIGURACIÓN DE FIREBASE:
 const firebaseConfig = {
-  apiKey: "AIzaSyCzZBL-GfbxbWtPzMHOkSgnfF0UXD7wt4Y",
-  authDomain: "pruebacamarero-b7f54.firebaseapp.com",
-  databaseURL: "https://pruebacamarero-b7f54-default-rtdb.europe-west1.firebasedatabase.app/",
-  projectId: "pruebacamarero-b7f54",
-  storageBucket: "pruebacamarero-b7f54.firebasestorage.app",
-  messagingSenderId: "191387429666",
-  appId: "1:191387429666:web:ae8472198e543c6de5d37b",
-  measurementId: "G-KXDVQLNQW2"
+  apiKey: "AIzaSyDPbN_dr1LzVhksnFmzeKOLpHAZZRSxWv4",
+  authDomain: "tecnologiasonix-733fc.firebaseapp.com",
+  databaseURL: "https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tecnologiasonix-733fc",
+  storageBucket: "tecnologiasonix-733fc.firebasestorage.app",
+  messagingSenderId: "139377195491",
+  appId: "1:139377195491:web:0727f6e57cc23351bd88d6",
+  measurementId: "G-DTY83CCZZ9"
 };
+
 
 // Inicializa la aplicación Firebase y la base de datos
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
 
 /**
  * Guarda un pedido en Firebase Realtime Database.
