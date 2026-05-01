@@ -1200,11 +1200,19 @@
       if (p.menuOptions) {
         let opts = p.menuOptions;
         if (typeof opts === 'string') {
-          try { opts = JSON.parse(opts); } catch(e) { opts = {}; }
+          try { opts = JSON.parse(opts); } catch(e) { opts = null; }
         }
-        Object.entries(opts).forEach(([title, options]) => {
-          addMenuSection(title, Array.isArray(options) ? options : []);
-        });
+        if (Array.isArray(opts)) {
+          // Nuevo formato: [{title, options}] — orden garantizado
+          opts.forEach(sec => {
+            addMenuSection(sec.title || '', Array.isArray(sec.options) ? sec.options : []);
+          });
+        } else if (opts && typeof opts === 'object') {
+          // Formato antiguo: {clave: [opciones]} — compatibilidad
+          Object.entries(opts).forEach(([title, options]) => {
+            addMenuSection(title, Array.isArray(options) ? options : []);
+          });
+        }
       }
       openModal('menuModal');
     }
@@ -1381,18 +1389,17 @@
       optsCt.appendChild(row);
     }
 
-    // Lee el DOM del constructor y devuelve el objeto de secciones (o null si vacío)
+    // Lee el DOM y devuelve array ordenado [{title, options}] o null
     function readMenuSectionsFromDOM() {
-      const out = {};
+      const out = [];
       document.querySelectorAll('#menuModalSectionsContainer .menu-section').forEach(sec => {
-        const title = sec.querySelector('.section-title').value.trim();
+        const title   = sec.querySelector('.section-title').value.trim();
         if (!title) return;
-        const key  = title.replace(/\s+/g, '_');
-        const opts = Array.from(sec.querySelectorAll('.option-input'))
+        const options = Array.from(sec.querySelectorAll('.option-input'))
           .map(i => i.value.trim()).filter(v => v);
-        if (opts.length) out[key] = opts;
+        if (options.length) out.push({ title, options });
       });
-      return Object.keys(out).length ? out : null;
+      return out.length ? out : null;
     }
 
     function updateMenuJSON() {
@@ -1430,7 +1437,7 @@
         return;
       }
 
-      // Leer secciones directamente del DOM en el momento de guardar
+      // Leer secciones directamente del DOM (array ordenado)
       const menuOptions = readMenuSectionsFromDOM();
 
       // Sube imagen a Cloudinary si hay archivo nuevo; si no, conserva la actual
@@ -1454,16 +1461,14 @@
         image:       imageUrl,
         category:    'Menu',
         subcategory: '',
-        menuOptions: menuOptions   // objeto directo o null
+        menuOptions: menuOptions   // array ordenado o null
       };
-
-      console.log('Guardando menú con secciones:', menuOptions);
 
       showLoader();
       try {
         const existingId = document.getElementById('adminMenuId').value;
         if (existingId) {
-          // set() en vez de update() para sobreescribir completamente (evita merge de claves antiguas)
+          // set() sobreescribe el nodo completo (evita merge de secciones antiguas)
           await set(ref(db, `productos/${existingId}`), data);
           showToast('✓ Menú actualizado', 'success');
         } else {
@@ -1473,7 +1478,6 @@
         closeModal('menuModal');
         await loadProducts();
       } catch (err) {
-        console.error('Error guardando menú:', err);
         showToast('Error guardando menú: ' + err.message, 'error');
       }
       hideLoader();
