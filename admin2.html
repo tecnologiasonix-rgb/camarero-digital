@@ -1381,18 +1381,23 @@
       optsCt.appendChild(row);
     }
 
-    function updateMenuJSON() {
+    // Lee el DOM del constructor y devuelve el objeto de secciones (o null si vacío)
+    function readMenuSectionsFromDOM() {
       const out = {};
       document.querySelectorAll('#menuModalSectionsContainer .menu-section').forEach(sec => {
         const title = sec.querySelector('.section-title').value.trim();
         if (!title) return;
-        const key  = title.replace(/\s+/g, '_');   // usar _ en vez de quitar espacios, más legible
+        const key  = title.replace(/\s+/g, '_');
         const opts = Array.from(sec.querySelectorAll('.option-input'))
           .map(i => i.value.trim()).filter(v => v);
         if (opts.length) out[key] = opts;
       });
-      // Si no hay secciones válidas, dejar vacío para que el guardado ponga null
-      document.getElementById('menuOptionsMenu').value = Object.keys(out).length ? JSON.stringify(out) : '';
+      return Object.keys(out).length ? out : null;
+    }
+
+    function updateMenuJSON() {
+      const result = readMenuSectionsFromDOM();
+      document.getElementById('menuOptionsMenu').value = result ? JSON.stringify(result) : '';
     }
 
     /** Botón Nuevo Menú */
@@ -1424,7 +1429,9 @@
         showToast('Título y precio son obligatorios', 'warn');
         return;
       }
-      updateMenuJSON();
+
+      // Leer secciones directamente del DOM en el momento de guardar
+      const menuOptions = readMenuSectionsFromDOM();
 
       // Sube imagen a Cloudinary si hay archivo nuevo; si no, conserva la actual
       let imageUrl = document.getElementById('adminMenuCurrentImage').value;
@@ -1440,26 +1447,24 @@
         }
       }
 
-      const isEdit = !!document.getElementById('adminMenuId').value;
-      let menuOptions = null;
-      const menuRaw = document.getElementById('menuOptionsMenu').value.trim();
-      if (menuRaw) {
-        try { menuOptions = JSON.parse(menuRaw); } catch(e) { menuOptions = null; }
-      }
-
       const data = {
         name:        titleF.value.trim(),
         description: document.getElementById('adminMenuDescription').value.trim(),
         price:       parseFloat(priceF.value),
         image:       imageUrl,
         category:    'Menu',
-        menuOptions: menuOptions   // objeto directo, Firebase lo serializa solo
+        subcategory: '',
+        menuOptions: menuOptions   // objeto directo o null
       };
+
+      console.log('Guardando menú con secciones:', menuOptions);
 
       showLoader();
       try {
-        if (isEdit) {
-          await updateProductoFB(document.getElementById('adminMenuId').value, data);
+        const existingId = document.getElementById('adminMenuId').value;
+        if (existingId) {
+          // set() en vez de update() para sobreescribir completamente (evita merge de claves antiguas)
+          await set(ref(db, `productos/${existingId}`), data);
           showToast('✓ Menú actualizado', 'success');
         } else {
           await addProductoFB(data);
@@ -1468,6 +1473,7 @@
         closeModal('menuModal');
         await loadProducts();
       } catch (err) {
+        console.error('Error guardando menú:', err);
         showToast('Error guardando menú: ' + err.message, 'error');
       }
       hideLoader();
