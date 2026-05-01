@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -726,6 +727,49 @@
     .confirm-actions { display: flex; gap: 8px; }
     .confirm-actions .btn { flex: 1; justify-content: center; }
 
+    /* ── DRAG & DROP CATEGORÍAS ── */
+    #sortableCatList {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #sortableCatList li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: grab;
+      font-weight: 600;
+      color: var(--ink);
+      transition: var(--tr);
+      user-select: none;
+    }
+
+    #sortableCatList li:active { cursor: grabbing; }
+
+    #sortableCatList li.dragging {
+      opacity: 0.4;
+      border-style: dashed;
+      background: var(--bg);
+    }
+
+    #sortableCatList li.drag-over {
+      border-color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--border);
+    }
+
+    .drag-handle {
+      color: var(--ink-dim);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
       .panel-container { padding: 1.2rem 0.9rem 4rem; }
@@ -806,6 +850,9 @@
           <p>Gestiona el catálogo de tu restaurante</p>
         </div>
         <div class="action-row">
+          <button class="btn btn-secondary" id="orderCategoriesBtn">
+            <i class="fas fa-sort"></i> Ordenar Categorías
+          </button>
           <button class="btn btn-secondary" id="newMenuBtn">
             <i class="fas fa-list-alt"></i> Nuevo Menú
           </button>
@@ -941,6 +988,27 @@
     </div>
   </div>
 
+  <!-- MODAL: Ordenar Categorías -->
+  <div class="modal" id="orderCategoriesModal">
+    <div class="modal-content">
+      <span class="modal-handle"></span>
+      <div class="modal-header">
+        <h3>Ordenar Categorías</h3>
+        <button class="modal-close" id="cancelOrderCategoriesBtn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.82rem;color:var(--ink-muted);margin-bottom:1rem;">
+          Arrastra las categorías para definir el orden en que aparecen en la carta digital.
+        </p>
+        <ul id="sortableCatList"></ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelOrderCategoriesBtn2">Cancelar</button>
+        <button class="btn btn-primary" id="saveOrderCategoriesBtn"><i class="fas fa-check"></i> Guardar Orden</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPT — Firebase + Cloudinary
        Sustituye Google Apps Script (fetchGET/fetchPOST) e Imgur
@@ -1009,8 +1077,6 @@
 
     // ─────────────────────────────────────────────────────────────
     // ⑤ CLOUDINARY UPLOAD (reemplaza uploadImgur)
-    //    Subida directa sin servidor, sin exponer credenciales secretas.
-    //    Solo necesitas un "unsigned upload preset".
     // ─────────────────────────────────────────────────────────────
     async function uploadCloudinary(file) {
       const fd = new FormData();
@@ -1024,18 +1090,12 @@
       const json = await res.json();
       if (json.error) throw new Error('Cloudinary: ' + json.error.message);
 
-      // Devuelve la URL segura (https)
       return json.secure_url;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // ⑥ FIREBASE CRUD — reemplaza fetchGET / fetchPOST
+    // ⑥ FIREBASE CRUD
     // ─────────────────────────────────────────────────────────────
-
-    /**
-     * Lee todos los productos de /productos en Firebase.
-     * Equivalente al cargarProductos() de app.js.
-     */
     async function loadProducts() {
       showLoader();
       try {
@@ -1066,24 +1126,15 @@
       hideLoader();
     }
 
-    /**
-     * Añade un producto nuevo con clave auto-generada por Firebase.
-     */
     async function addProductoFB(data) {
       const newRef = await push(ref(db, 'productos'), data);
       return newRef.key;
     }
 
-    /**
-     * Actualiza un producto existente (sobreescribe los campos).
-     */
     async function updateProductoFB(id, data) {
       await update(ref(db, `productos/${id}`), data);
     }
 
-    /**
-     * Elimina un producto por su clave Firebase.
-     */
     async function deleteProductoFB(id) {
       await remove(ref(db, `productos/${id}`));
     }
@@ -1125,7 +1176,6 @@
         const thumbHtml = p.image
           ? `<img class="td-thumb" src="${escHtml(p.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
           : `<div class="td-thumb-placeholder"><i class="fas fa-image"></i></div>`;
-        // Botón de edición abre el modal correcto según el tipo
         const editFn = isMenu ? `editMenu('${p.id}')` : `editProduct('${p.id}')`;
 
         html += `<tr>
@@ -1163,8 +1213,6 @@
     // ─────────────────────────────────────────────────────────────
     // ⑨ CRUD PRODUCTOS
     // ─────────────────────────────────────────────────────────────
-
-    /** Abre el modal de producto para editar */
     function editProduct(id) {
       const p = products.find(x => x.id === id);
       if (!p) return;
@@ -1177,12 +1225,10 @@
       document.getElementById('adminProductSubcategory').value  = p.subcategory || '';
       document.getElementById('adminProductImage').value        = '';
       document.getElementById('adminModalTitle').textContent    = 'Editar Producto';
-      // Preview imagen actual
       setImgPreview('adminProductPreviewWrap', 'adminProductPreviewImg', p.image);
       openModal('adminModal');
     }
 
-    /** Abre modal de menú para editar */
     function editMenu(id) {
       const p = products.find(x => x.id === id);
       if (!p) return;
@@ -1193,31 +1239,20 @@
       document.getElementById('adminMenuPrice').value        = p.price       || '';
       document.getElementById('adminMenuImage').value        = '';
       document.getElementById('menuModalTitle').textContent  = 'Editar Menú';
-      // Preview imagen actual
       setImgPreview('adminMenuPreviewWrap', 'adminMenuPreviewImg', p.image);
-      // Cargar secciones existentes
       document.getElementById('menuModalSectionsContainer').innerHTML = '';
       if (p.menuOptions) {
         let opts = p.menuOptions;
         if (typeof opts === 'string') {
-          try { opts = JSON.parse(opts); } catch(e) { opts = null; }
+          try { opts = JSON.parse(opts); } catch(e) { opts = {}; }
         }
-        if (Array.isArray(opts)) {
-          // Nuevo formato: [{title, options}] — orden garantizado
-          opts.forEach(sec => {
-            addMenuSection(sec.title || '', Array.isArray(sec.options) ? sec.options : []);
-          });
-        } else if (opts && typeof opts === 'object') {
-          // Formato antiguo: {clave: [opciones]} — compatibilidad
-          Object.entries(opts).forEach(([title, options]) => {
-            addMenuSection(title, Array.isArray(options) ? options : []);
-          });
-        }
+        Object.entries(opts).forEach(([title, options]) => {
+          addMenuSection(title, Array.isArray(options) ? options : []);
+        });
       }
       openModal('menuModal');
     }
 
-    /** Muestra u oculta el preview de imagen en los modales */
     function setImgPreview(wrapId, imgId, url) {
       const wrap = document.getElementById(wrapId);
       const img  = document.getElementById(imgId);
@@ -1230,7 +1265,6 @@
       }
     }
 
-    /** Confirmar borrado */
     function confirmDelete(id) {
       deleteId = id;
       document.getElementById('confirmDialog').classList.add('active');
@@ -1256,7 +1290,6 @@
       hideLoader();
     };
 
-    /** Botón Nuevo Producto */
     document.getElementById('newProductBtn').onclick = () => {
       document.getElementById('adminModalTitle').textContent = 'Nuevo Producto';
       ['adminProductId','adminProductCurrentImage','adminProductName',
@@ -1273,7 +1306,6 @@
       document.getElementById(id).onclick = () => closeModal('adminModal');
     });
 
-    /** Guardar producto (nuevo o edición) */
     document.getElementById('saveAdminProductBtn').onclick = async () => {
       const nameF  = document.getElementById('adminProductName');
       const priceF = document.getElementById('adminProductPrice');
@@ -1284,7 +1316,6 @@
         return;
       }
 
-      // Sube imagen a Cloudinary si hay archivo nuevo; si no, conserva la URL actual
       let imageUrl = document.getElementById('adminProductCurrentImage').value;
       const file   = document.getElementById('adminProductImage').files[0];
       if (file) {
@@ -1329,7 +1360,6 @@
     // ─────────────────────────────────────────────────────────────
     // ⑩ CRUD MENÚS
     // ─────────────────────────────────────────────────────────────
-
     function addMenuSection(defaultTitle = '', defaultOptions = []) {
       const container  = document.getElementById('menuModalSectionsContainer');
       const sectionDiv = document.createElement('div');
@@ -1389,17 +1419,17 @@
       optsCt.appendChild(row);
     }
 
-    // Lee el DOM y devuelve array ordenado [{title, options}] o null
     function readMenuSectionsFromDOM() {
-      const out = [];
+      const out = {};
       document.querySelectorAll('#menuModalSectionsContainer .menu-section').forEach(sec => {
-        const title   = sec.querySelector('.section-title').value.trim();
+        const title = sec.querySelector('.section-title').value.trim();
         if (!title) return;
-        const options = Array.from(sec.querySelectorAll('.option-input'))
+        const key  = title.replace(/\s+/g, '_');
+        const opts = Array.from(sec.querySelectorAll('.option-input'))
           .map(i => i.value.trim()).filter(v => v);
-        if (options.length) out.push({ title, options });
+        if (opts.length) out[key] = opts;
       });
-      return out.length ? out : null;
+      return Object.keys(out).length ? out : null;
     }
 
     function updateMenuJSON() {
@@ -1407,7 +1437,6 @@
       document.getElementById('menuOptionsMenu').value = result ? JSON.stringify(result) : '';
     }
 
-    /** Botón Nuevo Menú */
     document.getElementById('newMenuBtn').onclick = () => {
       ['adminMenuId','adminMenuCurrentImage','adminMenuTitleField',
        'adminMenuDescription','adminMenuPrice'].forEach(id => {
@@ -1427,7 +1456,6 @@
 
     document.getElementById('addSectionMenuBtn').onclick = () => addMenuSection();
 
-    /** Guardar menú (nuevo o edición) */
     document.getElementById('saveMenuBtn').onclick = async () => {
       const titleF = document.getElementById('adminMenuTitleField');
       const priceF = document.getElementById('adminMenuPrice');
@@ -1437,10 +1465,8 @@
         return;
       }
 
-      // Leer secciones directamente del DOM (array ordenado)
       const menuOptions = readMenuSectionsFromDOM();
 
-      // Sube imagen a Cloudinary si hay archivo nuevo; si no, conserva la actual
       let imageUrl = document.getElementById('adminMenuCurrentImage').value;
       const file   = document.getElementById('adminMenuImage').files[0];
       if (file) {
@@ -1461,14 +1487,15 @@
         image:       imageUrl,
         category:    'Menu',
         subcategory: '',
-        menuOptions: menuOptions   // array ordenado o null
+        menuOptions: menuOptions
       };
+
+      console.log('Guardando menú con secciones:', menuOptions);
 
       showLoader();
       try {
         const existingId = document.getElementById('adminMenuId').value;
         if (existingId) {
-          // set() sobreescribe el nodo completo (evita merge de secciones antiguas)
           await set(ref(db, `productos/${existingId}`), data);
           showToast('✓ Menú actualizado', 'success');
         } else {
@@ -1478,13 +1505,135 @@
         closeModal('menuModal');
         await loadProducts();
       } catch (err) {
+        console.error('Error guardando menú:', err);
         showToast('Error guardando menú: ' + err.message, 'error');
       }
       hideLoader();
     };
 
     // ─────────────────────────────────────────────────────────────
-    // ⑪ TOGGLE PANEL
+    // ⑪ ORDENAR CATEGORÍAS (DRAG & DROP)
+    // ─────────────────────────────────────────────────────────────
+    const orderCategoriesBtn       = document.getElementById('orderCategoriesBtn');
+    const orderCategoriesModal     = document.getElementById('orderCategoriesModal');
+    const sortableCatList          = document.getElementById('sortableCatList');
+    const saveOrderCategoriesBtn   = document.getElementById('saveOrderCategoriesBtn');
+    const cancelOrderCategoriesBtn = document.getElementById('cancelOrderCategoriesBtn');
+    const cancelOrderCategoriesBtn2= document.getElementById('cancelOrderCategoriesBtn2');
+
+    let draggedItem = null;
+
+    // Cargar orden existente y categorías actuales
+    async function loadOrderModal() {
+      // Obtener categorías únicas de los productos
+      const catsFromProducts = [...new Set(products.map(p => p.category).filter(Boolean))];
+      
+      // Obtener orden guardado
+      let savedOrder = [];
+      try {
+        const snap = await get(ref(db, 'configuracion/ordenCategorias'));
+        if (snap.exists()) {
+          savedOrder = snap.val();
+          if (!Array.isArray(savedOrder)) savedOrder = [];
+        }
+      } catch(e) { savedOrder = []; }
+
+      // Fusionar: primero las guardadas que aún existen, luego las nuevas
+      const orderedCats = [];
+      savedOrder.forEach(cat => {
+        if (catsFromProducts.includes(cat) && !orderedCats.includes(cat)) {
+          orderedCats.push(cat);
+        }
+      });
+      catsFromProducts.forEach(cat => {
+        if (!orderedCats.includes(cat)) orderedCats.push(cat);
+      });
+
+      // Renderizar lista
+      sortableCatList.innerHTML = '';
+      orderedCats.forEach(cat => {
+        const li = document.createElement('li');
+        li.draggable = true;
+        li.innerHTML = `<span class="drag-handle"><i class="fas fa-grip-vertical"></i></span> ${escHtml(cat)}`;
+        
+        li.addEventListener('dragstart', handleDragStart);
+        li.addEventListener('dragover', handleDragOver);
+        li.addEventListener('dragleave', handleDragLeave);
+        li.addEventListener('drop', handleDrop);
+        li.addEventListener('dragend', handleDragEnd);
+        
+        sortableCatList.appendChild(li);
+      });
+
+      openModal('orderCategoriesModal');
+    }
+
+    function handleDragStart(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (this !== draggedItem) {
+        this.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('drag-over');
+      
+      if (this !== draggedItem) {
+        const parent = sortableCatList;
+        const allItems = [...parent.children];
+        const fromIndex = allItems.indexOf(draggedItem);
+        const toIndex = allItems.indexOf(this);
+        
+        if (fromIndex < toIndex) {
+          parent.insertBefore(draggedItem, this.nextSibling);
+        } else {
+          parent.insertBefore(draggedItem, this);
+        }
+      }
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('#sortableCatList li').forEach(li => li.classList.remove('drag-over'));
+      draggedItem = null;
+    }
+
+    async function saveOrderCategories() {
+      const items = [...sortableCatList.children];
+      const order = items.map(li => li.textContent.replace(/^\s*/, '').trim());
+      
+      showLoader();
+      try {
+        await set(ref(db, 'configuracion/ordenCategorias'), order);
+        showToast('✓ Orden de categorías guardado', 'success');
+        closeModal('orderCategoriesModal');
+      } catch(err) {
+        showToast('Error al guardar orden: ' + err.message, 'error');
+      }
+      hideLoader();
+    }
+
+    orderCategoriesBtn.addEventListener('click', loadOrderModal);
+    saveOrderCategoriesBtn.addEventListener('click', saveOrderCategories);
+    cancelOrderCategoriesBtn.addEventListener('click', () => closeModal('orderCategoriesModal'));
+    cancelOrderCategoriesBtn2.addEventListener('click', () => closeModal('orderCategoriesModal'));
+
+    // ─────────────────────────────────────────────────────────────
+    // ⑫ TOGGLE PANEL
     // ─────────────────────────────────────────────────────────────
     document.getElementById('toggleAdmin').onclick = () => {
       const panel  = document.getElementById('adminPanel');
@@ -1498,16 +1647,16 @@
     };
 
     // ─────────────────────────────────────────────────────────────
-    // ⑫ CERRAR modales al hacer clic en el backdrop
+    // ⑬ CERRAR modales al hacer clic en el backdrop
     // ─────────────────────────────────────────────────────────────
-    ['adminModal','menuModal'].forEach(id => {
+    ['adminModal','menuModal','orderCategoriesModal'].forEach(id => {
       document.getElementById(id).addEventListener('click', e => {
         if (e.target === e.currentTarget) closeModal(id);
       });
     });
 
     // ─────────────────────────────────────────────────────────────
-    // ⑬ MODO OSCURO
+    // ⑭ MODO OSCURO
     // ─────────────────────────────────────────────────────────────
     const themeBtn = document.getElementById('themeToggle');
     let isDark = localStorage.getItem('adminTheme') === 'dark';
@@ -1529,8 +1678,7 @@
     applyTheme();
 
     // ─────────────────────────────────────────────────────────────
-    // ⑭ EXPONER funciones usadas en onclick del HTML generado
-    //    Necesario porque <script type="module"> tiene scope privado
+    // ⑮ EXPONER funciones usadas en onclick del HTML generado
     // ─────────────────────────────────────────────────────────────
     window.editProduct   = editProduct;
     window.editMenu      = editMenu;
