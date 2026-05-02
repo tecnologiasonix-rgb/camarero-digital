@@ -944,6 +944,79 @@
       .modal-body img { height: 175px; }
     }
 
+    /* ─── MEJORAS UX CAMARERO DIGITAL ─── */
+
+    /* Efecto carrito al añadir producto */
+    @keyframes cartBounce {
+      0%   { transform: scale(1); }
+      25%  { transform: scale(1.35) rotate(-8deg); }
+      50%  { transform: scale(1.2) rotate(6deg); }
+      70%  { transform: scale(1.1) rotate(-3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    @keyframes cartGlow {
+      0%   { box-shadow: 0 0 0 0 rgba(201,168,76,0); border-color: var(--card-border); }
+      40%  { box-shadow: 0 0 0 8px rgba(201,168,76,0.25); border-color: var(--gold); }
+      100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); border-color: var(--card-border); }
+    }
+    .cart-btn.added i {
+      animation: cartBounce 0.55s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+    .cart-btn.added {
+      animation: cartGlow 0.6s ease-out;
+    }
+
+    /* Badge pop al cambiar número */
+    @keyframes badgePop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.5); background: #fff; color: #0E0E0E; }
+      100% { transform: scale(1); }
+    }
+    .cart-count.pop {
+      animation: badgePop 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    /* Partícula fly-to-cart */
+    .fly-particle {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gold);
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 1;
+      transition: none;
+    }
+
+    /* Toast de confirmación */
+    #addToast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 30px;
+      padding: 0.55rem 1.2rem;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 9000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      white-space: nowrap;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    #addToast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #addToast i { color: var(--gold); font-size: 0.85rem; }
+
     /* ─── LOADING / SKELETON ─── */
     .skeleton {
       background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
@@ -991,6 +1064,9 @@
     <span class="footer-name">Nombre Bar-Restaurante</span>
     <span class="footer-ornament">✦</span>
   </footer>
+
+  <!-- TOAST AÑADIDO AL CARRITO -->
+  <div id="addToast"><i class="fas fa-check-circle"></i><span id="addToastText"></span></div>
 
   <!-- PRODUCT MODAL -->
   <div class="modal" id="productModal">
@@ -1496,12 +1572,61 @@
       if (selectedProduct) document.getElementById('modalSubtotal').textContent = (selectedProduct.price * qty).toFixed(2);
     });
 
+    // ── Efectos visuales al añadir al carrito ────────────────
+    function triggerCartEffects(productName, sourceEl) {
+      const cartBtn   = document.getElementById('openCart');
+      const cartCount = document.getElementById('cartCount');
+      const toast     = document.getElementById('addToast');
+      const toastText = document.getElementById('addToastText');
+
+      // 1. Vibración haptica (móvil)
+      if (navigator.vibrate) navigator.vibrate(40);
+
+      // 2. Bounce + glow en el icono del carrito
+      cartBtn.classList.remove('added');
+      void cartBtn.offsetWidth;
+      cartBtn.classList.add('added');
+      cartBtn.addEventListener('animationend', () => cartBtn.classList.remove('added'), { once: true });
+
+      // 3. Pop en el badge de cantidad
+      cartCount.classList.remove('pop');
+      void cartCount.offsetWidth;
+      cartCount.classList.add('pop');
+      cartCount.addEventListener('animationend', () => cartCount.classList.remove('pop'), { once: true });
+
+      // 4. Partícula "fly to cart"
+      if (sourceEl) {
+        const src  = sourceEl.getBoundingClientRect();
+        const dest = cartBtn.getBoundingClientRect();
+        const particle = document.createElement('div');
+        particle.className = 'fly-particle';
+        particle.style.left = (src.left + src.width  / 2 - 5) + 'px';
+        particle.style.top  = (src.top  + src.height / 2 - 5) + 'px';
+        document.body.appendChild(particle);
+        const dx = (dest.left + dest.width  / 2) - (src.left + src.width  / 2);
+        const dy = (dest.top  + dest.height / 2) - (src.top  + src.height / 2);
+        particle.animate([
+          { transform: 'translate(0,0) scale(1)',    opacity: 1 },
+          { transform: `translate(${dx * 0.4}px,${dy * 0.1 - 50}px) scale(1.4)`, opacity: 1, offset: 0.4 },
+          { transform: `translate(${dx}px,${dy}px) scale(0.2)`, opacity: 0 }
+        ], { duration: 500, easing: 'cubic-bezier(0.25,0.46,0.45,0.94)', fill: 'forwards' })
+        .onfinish = () => particle.remove();
+      }
+
+      // 5. Toast de confirmación
+      const name = productName.length > 28 ? productName.slice(0, 26) + '…' : productName;
+      toastText.textContent = `${name} añadido`;
+      toast.classList.add('show');
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
     // ── Agregar al carrito ───────────────────────────────────
     function addProductToCart() {
       if (!selectedProduct) return;
+      const addBtn = document.getElementById('addToCartBtn');
 
       if (selectedProduct.category === "Menu") {
-        // Parsear menuOptions
         let menuOpts = selectedProduct.menuOptions;
         if (typeof menuOpts === 'string') {
           try { menuOpts = JSON.parse(menuOpts); } catch(e) { menuOpts = null; }
@@ -1521,7 +1646,7 @@
         const selections = {};
         let isValid = true;
         sections.forEach(({ title, options }) => {
-          if (!Array.isArray(options) || options.length === 0) return; // sección informativa sin opciones: ok
+          if (!Array.isArray(options) || options.length === 0) return;
           const checked = document.querySelector(`input[name="${CSS.escape(title)}"]:checked`);
           if (!checked) isValid = false;
           selections[title] = checked ? checked.value : null;
@@ -1534,6 +1659,7 @@
         if (extraNotes) note += ` | Notas: ${extraNotes}`;
 
         cart.push({ ...selectedProduct, qty: 1, note, menuSelections: selections, addedAt: new Date().toISOString() });
+        triggerCartEffects(selectedProduct.name, addBtn);
         updateCart();
         closeModal();
         return;
@@ -1546,6 +1672,7 @@
       if (exist) { exist.qty += qty; }
       else { cart.push({ ...selectedProduct, qty, note, addedAt: new Date().toISOString() }); }
 
+      triggerCartEffects(selectedProduct.name, addBtn);
       updateCart();
       closeModal();
     }
