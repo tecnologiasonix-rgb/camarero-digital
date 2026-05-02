@@ -1385,21 +1385,21 @@
         const menuContainer = document.createElement('div');
         menuContainer.className = 'menu-container';
 
-        if (product.menuOptions) {
-          let opts = product.menuOptions;
-          if (typeof opts === 'string') {
-            try { opts = JSON.parse(opts); } catch(e) { opts = null; }
-          }
+        // Parsear menuOptions — puede ser string JSON, array, u objeto legacy
+        let menuOpts = product.menuOptions;
+        if (typeof menuOpts === 'string') {
+          try { menuOpts = JSON.parse(menuOpts); } catch(e) { menuOpts = null; }
+        }
+        // Normalizar a array [{title, options:[]}]
+        let sections = [];
+        if (Array.isArray(menuOpts)) {
+          sections = menuOpts;
+        } else if (menuOpts && typeof menuOpts === 'object') {
+          // Formato legacy: objeto {clave:[]}
+          sections = Object.entries(menuOpts).map(([title, options]) => ({ title, options }));
+        }
 
-          // Normalizar a array [{title, options:[]}] para garantizar orden de guardado
-          let sections = [];
-          if (Array.isArray(opts)) {
-            sections = opts; // formato nuevo
-          } else if (opts && typeof opts === 'object') {
-            // formato legacy: objeto {clave:[]} — orden de inserción de Firebase
-            sections = Object.entries(opts).map(([title, options]) => ({ title, options }));
-          }
-
+        if (sections.length > 0) {
           sections.forEach(({ title: sectionName, options }) => {
             if (!Array.isArray(options)) return;
 
@@ -1495,25 +1495,27 @@
       if (!selectedProduct) return;
 
       if (selectedProduct.category === "Menu") {
-        if (!selectedProduct.menuOptions) {
-          showMessage("Este menú no tiene opciones configuradas correctamente.");
-          return;
+        // Parsear menuOptions
+        let menuOpts = selectedProduct.menuOptions;
+        if (typeof menuOpts === 'string') {
+          try { menuOpts = JSON.parse(menuOpts); } catch(e) { menuOpts = null; }
+        }
+        let sections = [];
+        if (Array.isArray(menuOpts)) {
+          sections = menuOpts;
+        } else if (menuOpts && typeof menuOpts === 'object') {
+          sections = Object.entries(menuOpts).map(([title, options]) => ({ title, options }));
         }
 
-        // Normalizar a array de secciones (nuevo formato o legacy objeto)
-        let opts = selectedProduct.menuOptions;
-        if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch(e) { opts = null; } }
-        let sections = [];
-        if (Array.isArray(opts)) {
-          sections = opts;
-        } else if (opts && typeof opts === 'object') {
-          sections = Object.entries(opts).map(([title, options]) => ({ title, options }));
+        if (sections.length === 0) {
+          showMessage("Este menú no tiene opciones configuradas correctamente.");
+          return;
         }
 
         const selections = {};
         let isValid = true;
         sections.forEach(({ title, options }) => {
-          if (!Array.isArray(options) || options.length === 0) return; // sección sin opciones: no requiere selección
+          if (!Array.isArray(options) || options.length === 0) return; // sección informativa sin opciones: ok
           const checked = document.querySelector(`input[name="${CSS.escape(title)}"]:checked`);
           if (!checked) isValid = false;
           selections[title] = checked ? checked.value : null;
