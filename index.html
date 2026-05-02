@@ -39,6 +39,7 @@
       color: var(--text-primary);
       overflow-x: hidden;
       min-height: 100vh;
+      overscroll-behavior: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     }
 
@@ -130,7 +131,6 @@
       overflow-x: auto;
       gap: 10px;
       scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
 
@@ -369,7 +369,6 @@
       padding: 1rem;
       z-index: 1001;
       overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
     }
 
@@ -393,7 +392,7 @@
       box-shadow: 0 24px 80px rgba(0,0,0,0.7);
       transform: scale(0.95) translateY(12px);
       opacity: 0;
-      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       margin: auto;
     }
 
@@ -551,27 +550,17 @@
     /* Textarea */
     #modalNote, .menu-notes textarea {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 14px;
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: var(--radius-sm);
-      resize: none;
-      min-height: 52px;
-      max-height: 120px;
+      resize: vertical;
+      min-height: 80px;
       font-family: 'DM Sans', sans-serif;
-      margin-top: 6px;
+      margin-top: 8px;
       transition: var(--transition);
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       background: var(--dark-bg);
       color: var(--text-primary);
-      overflow-y: auto;
-    }
-
-    @media (max-width: 480px) {
-      #modalNote, .menu-notes textarea {
-        min-height: 42px;
-        font-size: 0.82rem;
-        padding: 7px 11px;
-      }
     }
 
     #modalNote:focus, .menu-notes textarea:focus {
@@ -644,7 +633,7 @@
       background: var(--surface);
       border-left: 1px solid var(--card-border);
       box-shadow: -10px 0 50px rgba(0,0,0,0.5);
-      transition: all 0.42s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       z-index: 1000;
       overflow-y: auto;
       display: flex;
@@ -1395,17 +1384,22 @@
         const menuContainer = document.createElement('div');
         menuContainer.className = 'menu-container';
 
-        if (product.menuOptions && typeof product.menuOptions === 'object') {
-          const SECTION_ORDER = ['entrante','primerPlato','segundoPlato','postre','bebida'];
-          const entries = Object.entries(product.menuOptions);
-          entries.sort(([a], [b]) => {
-            const ia = SECTION_ORDER.indexOf(a);
-            const ib = SECTION_ORDER.indexOf(b);
-            const ra = ia === -1 ? 999 : ia;
-            const rb = ib === -1 ? 999 : ib;
-            return ra - rb;
-          });
-          entries.forEach(([sectionName, options]) => {
+        // Parsear menuOptions — puede ser string JSON, array, u objeto legacy
+        let menuOpts = product.menuOptions;
+        if (typeof menuOpts === 'string') {
+          try { menuOpts = JSON.parse(menuOpts); } catch(e) { menuOpts = null; }
+        }
+        // Normalizar a array [{title, options:[]}]
+        let sections = [];
+        if (Array.isArray(menuOpts)) {
+          sections = menuOpts;
+        } else if (menuOpts && typeof menuOpts === 'object') {
+          // Formato legacy: objeto {clave:[]}
+          sections = Object.entries(menuOpts).map(([title, options]) => ({ title, options }));
+        }
+
+        if (sections.length > 0) {
+          sections.forEach(({ title: sectionName, options }) => {
             if (!Array.isArray(options)) return;
 
             const section = document.createElement('div');
@@ -1500,17 +1494,30 @@
       if (!selectedProduct) return;
 
       if (selectedProduct.category === "Menu") {
-        if (!selectedProduct.menuOptions || typeof selectedProduct.menuOptions !== 'object') {
+        // Parsear menuOptions
+        let menuOpts = selectedProduct.menuOptions;
+        if (typeof menuOpts === 'string') {
+          try { menuOpts = JSON.parse(menuOpts); } catch(e) { menuOpts = null; }
+        }
+        let sections = [];
+        if (Array.isArray(menuOpts)) {
+          sections = menuOpts;
+        } else if (menuOpts && typeof menuOpts === 'object') {
+          sections = Object.entries(menuOpts).map(([title, options]) => ({ title, options }));
+        }
+
+        if (sections.length === 0) {
           showMessage("Este menú no tiene opciones configuradas correctamente.");
           return;
         }
 
         const selections = {};
         let isValid = true;
-        Object.keys(selectedProduct.menuOptions).forEach(section => {
-          const checked = document.querySelector(`input[name="${CSS.escape(section)}"]:checked`);
+        sections.forEach(({ title, options }) => {
+          if (!Array.isArray(options) || options.length === 0) return; // sección informativa sin opciones: ok
+          const checked = document.querySelector(`input[name="${CSS.escape(title)}"]:checked`);
           if (!checked) isValid = false;
-          selections[section] = checked ? checked.value : null;
+          selections[title] = checked ? checked.value : null;
         });
 
         if (!isValid) { showMessage("Debe seleccionar todas las opciones del menú."); return; }
