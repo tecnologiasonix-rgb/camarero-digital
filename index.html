@@ -408,46 +408,35 @@
       opacity: 1;
     }
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.1rem 1.3rem;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .modal-header p {
-      font-family: 'Playfair Display', serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      letter-spacing: 0.02em;
-    }
-
-    .modal-header button {
-      background: var(--surface2);
-      border: 1px solid rgba(255,255,255,0.07);
+    /* Botón cerrar flotante sobre la imagen */
+    .modal-close-float {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      background: rgba(14,14,14,0.75);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.12);
       color: var(--text-muted);
-      font-size: 1rem;
-      cursor: pointer;
-      transition: var(--transition);
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition);
     }
-
-    .modal-header button:hover {
+    .modal-close-float:hover {
       color: var(--gold);
       border-color: var(--card-border);
-      transform: rotate(90deg);
     }
 
     .modal-body {
       padding: 1.4rem;
       text-align: center;
+      position: relative;
     }
 
     .modal-body img {
@@ -1071,11 +1060,8 @@
   <!-- PRODUCT MODAL -->
   <div class="modal" id="productModal">
     <div class="modal-content">
-      <div class="modal-header">
-        <p>Detalles del Producto</p>
-        <button id="closeModal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
+      <div class="modal-body" style="position:relative;">
+        <button id="closeModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <img id="modalImg" src="" alt="Imagen del producto">
         <h2 id="modalTitle"></h2>
         <p id="modalDesc"></p>
@@ -1120,11 +1106,8 @@
   <!-- ORDER CONFIRM MODAL -->
   <div class="modal" id="orderModal">
     <div class="modal-content">
-      <div class="modal-header">
-        <p>Confirmar Pedido</p>
-        <button id="closeOrderModal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
+      <div class="modal-body" style="position:relative;">
+        <button id="closeOrderModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <div class="modal-icon"><i class="fas fa-receipt"></i></div>
         <p style="font-size:1rem;color:var(--text-primary);">
           ¿Confirmas el pedido por un total de&nbsp;
@@ -1141,11 +1124,8 @@
   <!-- MESSAGE MODAL -->
   <div class="modal" id="messageModal">
     <div class="modal-content">
-      <div class="modal-header">
-        <p id="messageModalTitle">Mensaje</p>
-        <button id="closeMessageModal"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
+      <div class="modal-body" style="position:relative;">
+        <button id="closeMessageModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <div class="modal-icon"><i class="fas fa-info-circle"></i></div>
         <p id="messageModalText"></p>
       </div>
