@@ -411,8 +411,9 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 100;
       align-items: flex-end;
       justify-content: center;
@@ -691,8 +692,9 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 200;
       align-items: center;
       justify-content: center;
@@ -1067,8 +1069,20 @@
       toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
     }
 
-    const openModal  = id => document.getElementById(id).classList.add('active');
-    const closeModal = id => document.getElementById(id).classList.remove('active');
+    const openModal  = id => {
+      document.getElementById(id).classList.add('active');
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width    = '100%';
+      document.body.style.touchAction = 'none';
+    };
+    const closeModal = id => {
+      document.getElementById(id).classList.remove('active');
+      document.body.style.overflow   = '';
+      document.body.style.position   = '';
+      document.body.style.width      = '';
+      document.body.style.touchAction = '';
+    };
 
     function escHtml(str) {
       return String(str)
@@ -1247,7 +1261,14 @@
         if (typeof opts === 'string') {
           try { opts = JSON.parse(opts); } catch(e) { opts = {}; }
         }
-        Object.entries(opts).forEach(([title, options]) => {
+        const SECTION_ORDER = ['entrante','primerPlato','segundoPlato','postre','bebida'];
+        const menuEntries = Object.entries(opts);
+        menuEntries.sort(([a], [b]) => {
+          const ia = SECTION_ORDER.indexOf(a);
+          const ib = SECTION_ORDER.indexOf(b);
+          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+        menuEntries.forEach(([title, options]) => {
           addMenuSection(title, Array.isArray(options) ? options : []);
         });
       }
@@ -1269,16 +1290,28 @@
     function confirmDelete(id) {
       deleteId = id;
       document.getElementById('confirmDialog').classList.add('active');
+      document.body.style.overflow   = 'hidden';
+      document.body.style.position   = 'fixed';
+      document.body.style.width      = '100%';
+      document.body.style.touchAction = 'none';
     }
 
     document.getElementById('confirmCancel').onclick = () => {
       deleteId = null;
       document.getElementById('confirmDialog').classList.remove('active');
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width    = '';
+      document.body.style.touchAction = '';
     };
 
     document.getElementById('confirmOk').onclick = async () => {
       if (!deleteId) return;
       document.getElementById('confirmDialog').classList.remove('active');
+      document.body.style.overflow   = '';
+      document.body.style.position   = '';
+      document.body.style.width      = '';
+      document.body.style.touchAction = '';
       showLoader();
       try {
         await deleteProductoFB(deleteId);
