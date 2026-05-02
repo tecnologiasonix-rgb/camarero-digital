@@ -35,7 +35,6 @@
 
     html {
       overscroll-behavior: none;
-      overflow: hidden;
       height: 100%;
     }
 
@@ -1774,6 +1773,11 @@
 
     // ── Bloqueo efecto elástico (rubber band) en iOS ─────────
     document.addEventListener('touchmove', function(e) {
+      // Solo bloquear cuando hay un modal/panel abierto
+      const modalActive  = document.querySelector('.modal.active');
+      const cartOpen     = document.querySelector('.cart-panel.open');
+      if (!modalActive && !cartOpen) return; // página normal: scroll libre
+      // Con modal abierto, permitir scroll solo dentro del propio modal/panel
       let el = e.target;
       let scrollable = false;
       while (el && el !== document.body) {
