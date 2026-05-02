@@ -1258,16 +1258,17 @@
       document.getElementById('menuModalSectionsContainer').innerHTML = '';
       if (p.menuOptions) {
         let opts = p.menuOptions;
+        // Formato nuevo: string JSON de array [{title, options:[]}]
         if (typeof opts === 'string') {
           try { opts = JSON.parse(opts); } catch(e) { opts = null; }
         }
+        // Formato nuevo: array [{title, options:[]}]
         if (Array.isArray(opts)) {
-          // Formato nuevo: [{title, options:[]}] — orden garantizado
           opts.forEach(({ title, options }) => {
-            addMenuSection(title, Array.isArray(options) ? options : []);
+            addMenuSection(title || '', Array.isArray(options) ? options : []);
           });
         } else if (opts && typeof opts === 'object') {
-          // Formato legacy: objeto {clave: []} — preservar orden de inserción
+          // Formato legacy: objeto {clave:[]} — mostrar en orden de inserción
           Object.entries(opts).forEach(([title, options]) => {
             addMenuSection(title, Array.isArray(options) ? options : []);
           });
@@ -1463,12 +1464,13 @@
           .map(i => i.value.trim()).filter(v => v);
         out.push({ title, options: opts });
       });
-      return out.length ? out : null;
+      // Se serializa a string para que Firebase no altere el orden
+      return out.length ? JSON.stringify(out) : null;
     }
 
     function updateMenuJSON() {
       const result = readMenuSectionsFromDOM();
-      document.getElementById('menuOptionsMenu').value = result ? JSON.stringify(result) : '';
+      document.getElementById('menuOptionsMenu').value = result || '';
     }
 
     document.getElementById('newMenuBtn').onclick = () => {
