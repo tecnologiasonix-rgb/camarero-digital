@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -1258,19 +1257,21 @@
       document.getElementById('menuModalSectionsContainer').innerHTML = '';
       if (p.menuOptions) {
         let opts = p.menuOptions;
+        // Formato nuevo: string JSON de array [{title, options:[]}]
         if (typeof opts === 'string') {
-          try { opts = JSON.parse(opts); } catch(e) { opts = {}; }
+          try { opts = JSON.parse(opts); } catch(e) { opts = null; }
         }
-        const SECTION_ORDER = ['entrante','primerPlato','segundoPlato','postre','bebida'];
-        const menuEntries = Object.entries(opts);
-        menuEntries.sort(([a], [b]) => {
-          const ia = SECTION_ORDER.indexOf(a);
-          const ib = SECTION_ORDER.indexOf(b);
-          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-        });
-        menuEntries.forEach(([title, options]) => {
-          addMenuSection(title, Array.isArray(options) ? options : []);
-        });
+        // Formato nuevo: array [{title, options:[]}]
+        if (Array.isArray(opts)) {
+          opts.forEach(({ title, options }) => {
+            addMenuSection(title || '', Array.isArray(options) ? options : []);
+          });
+        } else if (opts && typeof opts === 'object') {
+          // Formato legacy: objeto {clave:[]} — mostrar en orden de inserción
+          Object.entries(opts).forEach(([title, options]) => {
+            addMenuSection(title, Array.isArray(options) ? options : []);
+          });
+        }
       }
       openModal('menuModal');
     }
@@ -1454,21 +1455,21 @@
     }
 
     function readMenuSectionsFromDOM() {
-      const out = {};
+      const out = [];
       document.querySelectorAll('#menuModalSectionsContainer .menu-section').forEach(sec => {
         const title = sec.querySelector('.section-title').value.trim();
         if (!title) return;
-        const key  = title.replace(/\s+/g, '_');
         const opts = Array.from(sec.querySelectorAll('.option-input'))
           .map(i => i.value.trim()).filter(v => v);
-        if (opts.length) out[key] = opts;
+        out.push({ title, options: opts });
       });
-      return Object.keys(out).length ? out : null;
+      // Se serializa a string para que Firebase no altere el orden
+      return out.length ? JSON.stringify(out) : null;
     }
 
     function updateMenuJSON() {
       const result = readMenuSectionsFromDOM();
-      document.getElementById('menuOptionsMenu').value = result ? JSON.stringify(result) : '';
+      document.getElementById('menuOptionsMenu').value = result || '';
     }
 
     document.getElementById('newMenuBtn').onclick = () => {
