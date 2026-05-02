@@ -33,11 +33,19 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    html {
+      overscroll-behavior: none;
+      overflow: hidden;
+      height: 100%;
+    }
+
     body {
       font-family: 'DM Sans', sans-serif;
       background-color: var(--dark-bg);
       color: var(--text-primary);
       overflow-x: hidden;
+      overflow-y: auto;
+      height: 100%;
       min-height: 100vh;
       overscroll-behavior: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
@@ -1763,6 +1771,30 @@
 
     loadProductsFromFirebase();
     updateCart();
+
+    // ── Bloqueo efecto elástico (rubber band) en iOS ─────────
+    document.addEventListener('touchmove', function(e) {
+      let el = e.target;
+      let scrollable = false;
+      while (el && el !== document.body) {
+        if (el.classList && (
+          el.classList.contains('cart-items-container') ||
+          el.classList.contains('modal') ||
+          el.classList.contains('cart-panel')
+        )) {
+          const canScrollUp   = el.scrollTop > 0;
+          const canScrollDown = el.scrollTop < (el.scrollHeight - el.clientHeight);
+          if (canScrollUp || canScrollDown) { scrollable = true; }
+          break;
+        }
+        el = el.parentElement;
+      }
+      if (!scrollable) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
   </script>
 
   <!-- ═══════════════════════════════════════════════════════
