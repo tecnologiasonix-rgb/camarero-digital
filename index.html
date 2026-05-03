@@ -1213,10 +1213,20 @@
     async function loadProductsFromFirebase() {
       showMessage("Cargando productos...", true);
 
+      // ── Obtener restaurantId desde la URL (?restaurante=ID) ──
+      const restaurantId = new URLSearchParams(window.location.search).get('restaurante');
+      if (!restaurantId) {
+        showMessage("⚠️ URL incorrecta. Accede mediante el enlace de tu restaurante (ej: ?restaurante=mi-restaurante&mesa=1)");
+        return;
+      }
+
+      // Guardar restaurantId en window para usarlo en realizarPedido y syncPendingOrders
+      window._restaurantId = restaurantId;
+
       try {
         // ── 1. Firebase ──────────────────────────────────────
         const { cargarProductos } = await import('./app.js');
-        const fromFirebase = await cargarProductos();
+        const fromFirebase = await cargarProductos(restaurantId);
 
         if (fromFirebase.length === 0) throw new Error("No hay productos en la base de datos.");
 
@@ -1226,7 +1236,7 @@
         // ── 2. Cargar orden personalizado de categorías ──────
         try {
           const orderResp = await fetch(
-            'https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app/configuracion/ordenCategorias.json'
+            `https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app/restaurantes/${restaurantId}/configuracion/ordenCategorias.json`
           );
           if (orderResp.ok) {
             const savedOrder = await orderResp.json();
@@ -1853,9 +1863,11 @@
         if (toSync.length === 0) return;
 
         const { guardarPedido } = await import('./app.js');
+        const restaurantId = window._restaurantId ||
+          new URLSearchParams(window.location.search).get('restaurante');
         for (const order of toSync) {
           try {
-            await guardarPedido(order);
+            await guardarPedido(order, restaurantId);
             order.pendingSyncToFirebase = false;
             order.syncedToFirebase = true;
             order.syncTime = new Date().toISOString();
@@ -1941,13 +1953,15 @@
         if (!module.db) throw new Error("Conexión a Firebase no establecida.");
         return module.guardarPedido;
       } catch(e) {
-        return async function guardarPedidoOffline(orderData) {
+        // Modo offline: guarda en localStorage para sincronizar después
+        return async function guardarPedidoOffline(orderData, restaurantId) {
           await new Promise(resolve => setTimeout(resolve, 800));
           const orders = JSON.parse(localStorage.getItem('orders') || '[]');
           orders.push({
             ...orderData,
-            timestamp:            new Date().toISOString(),
-            savedOffline:         true,
+            restaurantId,
+            timestamp:             new Date().toISOString(),
+            savedOffline:          true,
             pendingSyncToFirebase: true,
           });
           localStorage.setItem('orders', JSON.stringify(orders));
@@ -1959,23 +1973,28 @@
     const guardarPedido = await initFirebase();
 
     window.realizarPedido = async function realizarPedido() {
-      const pedido     = window.cart || [];
+      const pedido = window.cart || [];
       if (pedido.length === 0) throw new Error("El carrito está vacío.");
 
-      const mesaParam  = new URLSearchParams(window.location.search).get('mesa');
-      const mesa       = mesaParam ? `Mesa ${mesaParam}` : "Mesa";
-      const precio     = pedido.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      const notas      = (document.getElementById('modalNote')?.value || '').trim();
+      // restaurantId desde la URL (?restaurante=ID)
+      const restaurantId = window._restaurantId ||
+        new URLSearchParams(window.location.search).get('restaurante');
+      if (!restaurantId) throw new Error("Falta el parámetro ?restaurante= en la URL.");
+
+      const mesaParam = new URLSearchParams(window.location.search).get('mesa');
+      const mesa      = mesaParam ? `Mesa ${mesaParam}` : "Mesa";
+      const precio    = pedido.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const notas     = (document.getElementById('modalNote')?.value || '').trim();
 
       await guardarPedido({
         mesa,
-        pedido:     JSON.parse(JSON.stringify(pedido)),
+        pedido:      JSON.parse(JSON.stringify(pedido)),
         precio,
         notas,
-        fecha:      new Date().toISOString(),
+        fecha:       new Date().toISOString(),
         dispositivo: navigator.userAgent,
-        estado:     "pendiente",
-      });
+        estado:      "pendiente",
+      }, restaurantId);
     };
   </script>
 
