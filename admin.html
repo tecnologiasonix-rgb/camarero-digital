@@ -23,6 +23,133 @@
     }
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
     body { font-family: 'Mulish', sans-serif; background: var(--bg); color: var(--ink); overflow-x: hidden; min-height: 100vh; transition: background 0.3s ease, color 0.3s ease; }
+
+    /* ── LOGIN MODAL ── */
+    .login-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+
+    .login-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      animation: modalPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.9) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .login-logo {
+      width: 52px; height: 52px;
+      background: var(--accent);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: var(--accent-fg);
+      margin: 0 auto 1.4rem;
+    }
+
+    .login-content h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.02em;
+    }
+
+    .login-content p {
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .login-content input {
+      width: 100%;
+      padding: 11px 14px;
+      margin-bottom: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      background: var(--surface2);
+      color: var(--ink);
+      text-align: center;
+      letter-spacing: 0.3em;
+      transition: var(--tr);
+      outline: none;
+    }
+
+    .login-content input::placeholder {
+      font-family: 'Mulish', sans-serif;
+      letter-spacing: 0.02em;
+      color: var(--ink-dim);
+      font-size: 0.85rem;
+    }
+
+    .login-content input:focus {
+      border-color: var(--ink);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(26,26,24,0.07);
+    }
+
+    [data-theme="dark"] .login-content input:focus {
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+    }
+
+    .login-content button {
+      width: 100%;
+      padding: 11px;
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: var(--ink);
+      color: var(--accent-fg);
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--tr);
+      letter-spacing: 0.02em;
+    }
+
+    .login-content button:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .login-error {
+      color: var(--danger);
+      margin-top: 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: none;
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60%  { transform: translateX(-6px); }
+      40%, 80%  { transform: translateX(6px); }
+    }
+
+    /* ── Resto de estilos (sin cambios) ── */
     .loader-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
     .loader-wrap.active { display: flex; }
     .loader-ring { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.85s linear infinite; }
@@ -38,9 +165,12 @@
     .header-icon { width: 36px; height: 36px; background: var(--ink); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--accent-fg); font-size: 0.9rem; flex-shrink: 0; }
     .header-title { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
     .header-subtitle { font-size: 0.7rem; color: var(--ink-muted); }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
     .btn-manage { display: flex; align-items: center; gap: 7px; background: var(--ink); color: var(--accent-fg); border: none; padding: 0 1.1rem; height: 38px; border-radius: 8px; font-family: 'Mulish', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer; transition: var(--tr); }
     .btn-manage:hover { opacity: 0.85; transform: translateY(-1px); }
     .btn-manage.open { background: var(--surface); color: var(--ink); border: 1.5px solid var(--border); }
+    .btn-logout { background: transparent; border: 1.5px solid var(--border); color: var(--ink-muted); padding: 0 12px; height: 38px; border-radius: 8px; font-family: 'Mulish', sans-serif; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: var(--tr); display: flex; align-items: center; gap: 6px; }
+    .btn-logout:hover { color: var(--danger); border-color: var(--danger); }
     #adminPanel { display: none; animation: slideDown 0.3s ease-out; }
     #adminPanel.open { display: block; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -148,6 +278,19 @@
 </head>
 <body>
 
+  <!-- LOGIN MODAL (mismo que en recepción) -->
+  <div id="loginModal" class="login-modal">
+    <div class="login-content">
+      <div class="login-logo"><i class="fas fa-utensils"></i></div>
+      <h2>Panel de Administración</h2>
+      <p>Introduce tus credenciales para acceder</p>
+      <input type="email"    id="adminEmailInput"    placeholder="📧 Email" autocomplete="username">
+      <input type="password" id="adminPinInput"      placeholder="🔒 Contraseña" autocomplete="current-password">
+      <button id="loginBtn">Entrar</button>
+      <p id="loginError" class="login-error"><i class="fas fa-exclamation-triangle"></i> <span id="loginErrorMsg">Credenciales incorrectas</span></p>
+    </div>
+  </div>
+
   <div class="loader-wrap" id="loader"><div class="loader-ring"></div><p>Cargando…</p></div>
   <div class="toast" id="toast"></div>
   <div class="confirm-dialog" id="confirmDialog">
@@ -170,8 +313,9 @@
         <div class="header-subtitle" id="headerRestId">Cargando…</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div class="header-actions">
       <button id="themeToggle" title="Cambiar tema" style="width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);background:var(--surface2);color:var(--ink-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;transition:var(--tr);flex-shrink:0;"><i class="fas fa-moon"></i></button>
+      <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Salir</button>
       <button class="btn-manage" id="toggleAdmin"><i class="fas fa-sliders-h"></i> Gestionar</button>
     </div>
   </header>
@@ -288,27 +432,73 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, get, set, push, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDPbN_dr1LzVhksnFmzeKOLpHAZZRSxWv4",
-      authDomain: "tecnologiasonix-733fc.firebaseapp.com",
-      databaseURL: "https://tecnologiasonix-733fc-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "tecnologiasonix-733fc",
-      storageBucket: "tecnologiasonix-733fc.firebasestorage.app",
-      messagingSenderId: "139377195491",
-      appId: "1:139377195491:web:0727f6e57cc23351bd88d6"
-    };
+    // ════════════════════════════
+    // Importaciones (app.js para auth + db)
+    // ════════════════════════════
+    import { db, auth, login, logout, esperarAuth, getRestaurantId } from "./app.js";
+    import { ref, get, set, push, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const CLOUDINARY_CLOUD_NAME = 'djtiqzp9t';
     const CLOUDINARY_UPLOAD_PRESET = 'pruebas restaurante';
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    // ════════════════════════════
+    // A U T E N T I C A C I Ó N
+    // ════════════════════════════
+    const elements = {
+      loginModal:    document.getElementById("loginModal"),
+      adminEmailInput: document.getElementById("adminEmailInput"),
+      adminPinInput:   document.getElementById("adminPinInput"),
+      loginBtn:        document.getElementById("loginBtn"),
+      loginError:      document.getElementById("loginError"),
+      loginErrorMsg:   document.getElementById("loginErrorMsg"),
+      logoutBtn:       document.getElementById("logoutBtn")
+    };
+
+    const user = await esperarAuth();
+
+    if (!user) {
+      // Mostrar modal de login
+      elements.loginModal.style.display = "flex";
+
+      elements.loginBtn.addEventListener("click", async () => {
+        const email    = elements.adminEmailInput.value.trim();
+        const password = elements.adminPinInput.value;
+        elements.loginError.style.display = "none";
+
+        if (!email || !password) {
+          elements.loginErrorMsg.textContent = "Introduce email y contraseña.";
+          elements.loginError.style.display = "block";
+          return;
+        }
+        try {
+          await login(email, password);
+          location.reload();
+        } catch (e) {
+          elements.loginErrorMsg.textContent = "Credenciales incorrectas.";
+          elements.loginError.style.display  = "block";
+          elements.loginError.style.animation = 'none';
+          setTimeout(() => { elements.loginError.style.animation = 'shake 0.5s ease'; }, 10);
+        }
+      });
+
+      elements.adminPinInput.addEventListener("keyup",   e => { if (e.key === "Enter") elements.loginBtn.click(); });
+      elements.adminEmailInput.addEventListener("keyup", e => { if (e.key === "Enter") elements.loginBtn.click(); });
+
+      // Detener ejecución del resto del script hasta que se autentique
+      throw new Error("Esperando autenticación");
+    }
+
+    // Usuario autenticado → ocultar modal
+    elements.loginModal.style.display = "none";
+
+    // Logout
+    elements.logoutBtn.addEventListener("click", async () => {
+      await logout();
+      location.reload();
+    });
 
     // ════════════════════════════
-    // Obtener restaurantId de la URL
+    // Obtener restaurantId de la URL (se mantiene igual)
     // ════════════════════════════
     const urlParams = new URLSearchParams(window.location.search);
     const restaurantId = urlParams.get('restaurante');
@@ -324,14 +514,11 @@
     }
 
     // ════════════════════════════
-    // Rutas útiles
+    // Resto del código original (sin cambios)
     // ════════════════════════════
     const productosRef = (id = '') => ref(db, `restaurantes/${restaurantId}/productos/${id}`);
     const configRef = (subPath = '') => ref(db, `restaurantes/${restaurantId}/configuracion/${subPath}`);
 
-    // ════════════════════════════
-    // UI helpers
-    // ════════════════════════════
     const $ = id => document.getElementById(id);
     const showLoader = () => $('loader').classList.add('active');
     const hideLoader = () => $('loader').classList.remove('active');
@@ -350,9 +537,6 @@
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ════════════════════════════
-    // Cloudinary
-    // ════════════════════════════
     async function uploadCloudinary(file) {
       const fd = new FormData();
       fd.append('file', file);
@@ -363,16 +547,10 @@
       return json.secure_url;
     }
 
-    // ════════════════════════════
-    // Estado
-    // ════════════════════════════
     let products = [];
     let deleteId = null;
     let searchTerm = '';
 
-    // ════════════════════════════
-    // Cargar nombre del restaurante
-    // ════════════════════════════
     async function loadRestaurantName() {
       try {
         const snap = await get(ref(db, `restaurantes/${restaurantId}/nombre`));
@@ -389,9 +567,6 @@
     }
     loadRestaurantName();
 
-    // ════════════════════════════
-    // Cargar productos
-    // ════════════════════════════
     async function loadProducts() {
       showLoader();
       try {
@@ -422,9 +597,6 @@
       hideLoader();
     }
 
-    // ════════════════════════════
-    // CRUD Firebase
-    // ════════════════════════════
     async function addProductoFB(data) {
       const newRef = await push(productosRef(), data);
       return newRef.key;
@@ -436,9 +608,6 @@
       await remove(productosRef(id));
     }
 
-    // ════════════════════════════
-    // Render tabla
-    // ════════════════════════════
     function renderProducts() {
       const c = $('adminTableContainer');
       const filtered = products.filter(p =>
@@ -476,17 +645,11 @@
       c.innerHTML = html;
     }
 
-    // ════════════════════════════
-    // Búsqueda
-    // ════════════════════════════
     $('searchInput').addEventListener('input', e => {
       searchTerm = e.target.value.trim().toLowerCase();
       renderProducts();
     });
 
-    // ════════════════════════════
-    // Editar producto / menú
-    // ════════════════════════════
     function setImgPreview(wrapId, imgId, url) {
       const wrap = $(wrapId), img = $(imgId);
       if (url) { img.src = url; wrap.classList.add('visible'); }
@@ -533,9 +696,6 @@
       openModal('menuModal');
     }
 
-    // ════════════════════════════
-    // Constructor de menú
-    // ════════════════════════════
     function updateMenuJSON() {
       const sections = [];
       document.querySelectorAll('#menuModalSectionsContainer .menu-section').forEach(sec => {
@@ -587,9 +747,6 @@
       optsCt.appendChild(row);
     }
 
-    // ════════════════════════════
-    // Confirmación de borrado
-    // ════════════════════════════
     window.confirmDelete = function(id) {
       deleteId = id;
       $('confirmDialog').classList.add('active');
@@ -614,9 +771,6 @@
       hideLoader();
     };
 
-    // ════════════════════════════
-    // Nuevo producto
-    // ════════════════════════════
     $('newProductBtn').onclick = () => {
       $('adminModalTitle').textContent = 'Nuevo Producto';
       ['adminProductId','adminProductCurrentImage','adminProductName','adminProductDescription','adminProductPrice','adminProductCategory','adminProductSubcategory'].forEach(id => $(id).value = '');
@@ -656,9 +810,6 @@
       hideLoader();
     };
 
-    // ════════════════════════════
-    // Menú nuevo / editar
-    // ════════════════════════════
     $('newMenuBtn').onclick = () => {
       ['adminMenuId','adminMenuCurrentImage','adminMenuTitleField','adminMenuDescription','adminMenuPrice'].forEach(id => $(id).value = '');
       $('adminMenuImage').value = '';
@@ -699,9 +850,6 @@
       hideLoader();
     };
 
-    // ════════════════════════════
-    // Ordenar categorías (drag & drop)
-    // ════════════════════════════
     let draggedItem = null;
     async function loadOrderModal() {
       const catsFromProducts = [...new Set(products.map(p => p.category).filter(Boolean))];
@@ -756,11 +904,9 @@
     $('cancelOrderCategoriesBtn').addEventListener('click', () => closeModal('orderCategoriesModal'));
     $('cancelOrderCategoriesBtn2').addEventListener('click', () => closeModal('orderCategoriesModal'));
 
-    // Exponer funciones globales necesarias en onclick
     window.editProduct = editProduct;
     window.editMenu = editMenu;
 
-    // Toggle panel
     $('toggleAdmin').onclick = () => {
       const panel = $('adminPanel');
       const btn = $('toggleAdmin');
@@ -770,12 +916,10 @@
       if (isOpen) loadProducts();
     };
 
-    // Cerrar modales al hacer clic fuera
     ['adminModal','menuModal','orderCategoriesModal'].forEach(id => {
       $(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(id); });
     });
 
-    // Modo oscuro
     const themeBtn = $('themeToggle');
     let isDark = localStorage.getItem('adminTheme') === 'dark';
     function applyTheme() {
