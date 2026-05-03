@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    /* ... exactamente el mismo CSS que antes, sin cambios ... */
     :root {
       --bg: #F4F2EE; --surface: #FFFFFF; --surface2: #F9F8F6;
       --border: #E5E2DC; --ink: #1A1A18; --ink-muted: #7A7870; --ink-dim: #BEBAB2;
@@ -498,23 +499,33 @@
     });
 
     // ════════════════════════════
-    // Obtener restaurantId de la URL (se mantiene igual)
+    // Obtener restaurantId asociado al usuario autenticado
+    // (ya no se lee de la URL)
     // ════════════════════════════
-    const urlParams = new URLSearchParams(window.location.search);
-    const restaurantId = urlParams.get('restaurante');
-
-    if (!restaurantId) {
-      document.body.innerHTML = `
-        <div style="max-width:480px;margin:80px auto;padding:2rem;text-align:center;font-family:sans-serif;">
-          <h2 style="color:#D94F3D;">⚠️ Falta el identificador del restaurante</h2>
-          <p>Accede a la página con el parámetro <code>?restaurante=ID</code> en la URL.</p>
-          <p style="margin-top:1rem;color:gray;">Ejemplo: <code>admin.html?restaurante=mi-restaurante</code></p>
-        </div>`;
-      throw new Error('restaurantId no proporcionado');
+    let restaurantId;
+    try {
+      restaurantId = await getRestaurantId();
+      if (!restaurantId) throw new Error("No se encontró restaurante asociado al usuario.");
+    } catch (err) {
+      // Si no se puede obtener, mostramos un error y detenemos la inicialización
+      showToast('Error al obtener el restaurante: ' + err.message, 'error');
+      throw err;
     }
 
+    // La función showToast se define más adelante, pero adelantamos una versión simple para este momento
+    function showToastEarly(msg, type = '') {
+      const t = $('toast');
+      if (t) {
+        t.textContent = msg;
+        t.className = 'toast show ' + type;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+      }
+    }
+    // ... pero ya que necesitamos toast definido, lo redefinimos global más abajo
+
     // ════════════════════════════
-    // Resto del código original (sin cambios)
+    // Resto de funciones (sin cambios, solo se usa ahora restaurantId obtenido)
     // ════════════════════════════
     const productosRef = (id = '') => ref(db, `restaurantes/${restaurantId}/productos/${id}`);
     const configRef = (subPath = '') => ref(db, `restaurantes/${restaurantId}/configuracion/${subPath}`);
