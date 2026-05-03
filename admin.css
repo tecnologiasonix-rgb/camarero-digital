@@ -181,3 +181,91 @@ tr:hover {
   text-align: center;
   color: var(--ink-muted);
 }
+
+/* ================= LOGIN MODAL ================= */
+.login-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.login-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius);
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: var(--shadow);
+  animation: modalPop 0.3s ease;
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.9) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.login-logo {
+  width: 52px;
+  height: 52px;
+  background: var(--ink);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: var(--accent-fg);
+  margin: 0 auto 1.4rem;
+}
+
+.login-content h2 {
+  font-family: 'Mulish', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.3rem;
+}
+
+.login-content p {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin-bottom: 1.5rem;
+}
+
+.login-content input {
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Mulish', sans-serif;
+  font-size: 1rem;
+  background: var(--surface2);
+  color: var(--ink);
+  text-align: center;
+  outline: none;
+}
+
+.login-content input:focus {
+  border-color: var(--ink);
+}
+
+.login-content button {
+  width: 100%;
+  padding: 11px;
+  font-family: 'Mulish', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: var(--ink);
+  color: var(--accent-fg);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
