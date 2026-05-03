@@ -1791,6 +1791,14 @@
     document.getElementById('confirmOrder').addEventListener('click', async () => {
       closeOrderModal();
       showMessage("Procesando pedido...", true);
+      let intentos = 0;
+     while (typeof window.realizarPedido !== 'function' && intentos < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      intentos++;
+    }
+     if (typeof window.realizarPedido !== 'function') {
+      throw new Error("El módulo de pedidos no se ha cargado. Recarga la página.");
+    }
       try {
         if (typeof window.realizarPedido === 'function') {
           await window.realizarPedido();
