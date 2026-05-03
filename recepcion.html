@@ -916,15 +916,16 @@
 </head>
 <body>
 
-  <!-- LOGIN MODAL -->
+  <!-- LOGIN MODAL — Firebase Auth (email + contraseña) -->
   <div id="loginModal" class="login-modal">
     <div class="login-content">
       <div class="login-logo"><i class="fas fa-fire-burner"></i></div>
       <h2>Panel de Cocina</h2>
-      <p>Introduce tu PIN para acceder</p>
-      <input type="password" id="adminPinInput" placeholder="🔒 PIN de acceso">
+      <p>Introduce tus credenciales para acceder</p>
+      <input type="email"    id="adminEmailInput"    placeholder="📧 Email" autocomplete="username">
+      <input type="password" id="adminPinInput"      placeholder="🔒 Contraseña" autocomplete="current-password">
       <button id="loginBtn">Entrar</button>
-      <p id="loginError" class="login-error"><i class="fas fa-exclamation-triangle"></i> PIN incorrecto</p>
+      <p id="loginError" class="login-error"><i class="fas fa-exclamation-triangle"></i> <span id="loginErrorMsg">Credenciales incorrectas</span></p>
     </div>
   </div>
 
@@ -1042,31 +1043,8 @@
 
   <!-- ══ LÓGICA ══ -->
   <script type="module">
-    // ─────────────────────────────────────────────
-    // ★ CONFIGURA TU PIN AQUÍ ★
-    const ADMIN_PIN = "adminadmin";
-    // ─────────────────────────────────────────────
 
-    const sessionKey = "adminSession";
-    const elements = {
-      loginModal:     document.getElementById("loginModal"),
-      adminPinInput:  document.getElementById("adminPinInput"),
-      loginBtn:       document.getElementById("loginBtn"),
-      loginError:     document.getElementById("loginError"),
-      logoutBtn:      document.getElementById("logoutBtn"),
-      deleteAllBtn:   document.getElementById("deleteAllBtn"),
-      confirmModal:   document.getElementById("confirmModal"),
-      confirmDelete:  document.getElementById("confirmDelete"),
-      cancelDelete:   document.getElementById("cancelDelete"),
-      soundToggle:    document.getElementById("soundToggle"),
-      mobileFilters:  document.getElementById("mobileFilters"),
-      filterButtons:  document.querySelectorAll('.filter-btn'),
-      ordersGrid:     document.getElementById('ordersGrid'),
-      filterIndicator:document.getElementById('filterIndicator'),
-      currentFilter:  document.getElementById('currentFilter')
-    };
-
-    // ── Toast (reemplaza alert / console.error) ──
+    // ── Toast ──────────────────────────────────────────────────────────────────
     function showToast(msg, type = 'info') {
       const t = document.createElement('div');
       t.textContent = msg;
@@ -1094,17 +1072,37 @@
       }, 3000);
     }
 
-    // ── Sonido ──
+    // ── Sonido ────────────────────────────────────────────────────────────────
+    const orderSound  = document.getElementById('orderSound');
     let soundEnabled  = localStorage.getItem('soundEnabled') !== 'false';
     let lastSoundTime = 0;
+
+    const elements = {
+      loginModal:      document.getElementById("loginModal"),
+      adminPinInput:   document.getElementById("adminPinInput"),
+      adminEmailInput: document.getElementById("adminEmailInput"),
+      loginBtn:        document.getElementById("loginBtn"),
+      loginError:      document.getElementById("loginError"),
+      loginErrorMsg:   document.getElementById("loginErrorMsg"),
+      logoutBtn:       document.getElementById("logoutBtn"),
+      deleteAllBtn:    document.getElementById("deleteAllBtn"),
+      confirmModal:    document.getElementById("confirmModal"),
+      confirmDelete:   document.getElementById("confirmDelete"),
+      cancelDelete:    document.getElementById("cancelDelete"),
+      soundToggle:     document.getElementById("soundToggle"),
+      mobileFilters:   document.getElementById("mobileFilters"),
+      filterButtons:   document.querySelectorAll('.filter-btn'),
+      ordersGrid:      document.getElementById('ordersGrid'),
+      filterIndicator: document.getElementById('filterIndicator'),
+      currentFilter:   document.getElementById('currentFilter')
+    };
 
     function updateSoundIcon() {
       const icon = elements.soundToggle.querySelector('i');
       const text = elements.soundToggle.querySelector('span');
-      icon.className    = soundEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
+      icon.className = soundEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
       if (text) text.textContent = soundEnabled ? 'Sonido: ON' : 'Sonido: OFF';
     }
-
     elements.soundToggle.addEventListener('click', () => {
       soundEnabled = !soundEnabled;
       localStorage.setItem('soundEnabled', soundEnabled);
@@ -1112,399 +1110,359 @@
     });
     updateSoundIcon();
 
-    // ── Auth ──
-    function showLoginModal() { elements.loginModal.style.display = "flex"; }
-    function hideLoginModal() { elements.loginModal.style.display = "none"; }
-    function checkAuth() {
-      localStorage.getItem(sessionKey) === "true" ? hideLoginModal() : showLoginModal();
-    }
-
-    elements.loginBtn.addEventListener("click", () => {
-      if (elements.adminPinInput.value === ADMIN_PIN) {
-        localStorage.setItem(sessionKey, "true");
-        hideLoginModal();
-      } else {
-        elements.loginError.style.display = "block";
-        elements.loginError.style.animation = 'none';
-        setTimeout(() => { elements.loginError.style.animation = 'shake 0.5s ease'; }, 10);
-      }
-    });
-
-    elements.adminPinInput.addEventListener("keyup", (e) => {
-      if (e.key === "Enter") elements.loginBtn.click();
-    });
-
-    elements.logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem(sessionKey);
-      location.reload();
-    });
-
-    checkAuth();
-
-    // ── Firebase (importado desde app.js) ──
-    import { db } from "./app.js";
+    // ── Firebase Auth + Multi-Tenant ──────────────────────────────────────────
+    import { db, auth, login, logout, esperarAuth, getRestaurantId } from "./app.js";
     import { ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get }
       from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    const pedidosRef  = ref(db, 'pedidos');
-    const orderSound  = document.getElementById('orderSound');
+    // Esperar resolución del estado de auth antes de continuar
+    const user = await esperarAuth();
 
-    // ── Estadísticas ──
-    let lastActivityTime = null;
+    if (!user) {
+      // ── Sin sesión: mostrar login modal ──
+      elements.loginModal.style.display = "flex";
 
-    function updateStats() {
-      const cards  = document.querySelectorAll('.order-card');
-      let pending  = 0, completed = 0, cancelled = 0;
-      cards.forEach(c => {
-        if (c.dataset.status === 'pending')   pending++;
-        if (c.dataset.status === 'completed') completed++;
-        if (c.dataset.status === 'cancelled') cancelled++;
-      });
-      const total = pending + completed + cancelled;
+      elements.loginBtn.addEventListener("click", async () => {
+        const email    = elements.adminEmailInput.value.trim();
+        const password = elements.adminPinInput.value;
+        elements.loginError.style.display = "none";
 
-      document.getElementById('stat-pending').textContent   = pending;
-      document.getElementById('stat-completed').textContent = completed;
-      document.getElementById('stat-cancelled').textContent = cancelled;
-      document.getElementById('fc-all').textContent         = total;
-      document.getElementById('fc-pending').textContent     = pending;
-      document.getElementById('fc-completed').textContent   = completed;
-      document.getElementById('fc-cancelled').textContent   = cancelled;
-
-      // "Última actualización" = hora real del último pedido/cambio de Firebase
-      const timeEl = document.getElementById('stat-time');
-      if (lastActivityTime) {
-        timeEl.textContent = lastActivityTime.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-      } else {
-        timeEl.textContent = '—';
-      }
-    }
-
-    function registrarActividad() {
-      lastActivityTime = new Date();
-      updateStats();
-      refreshTimeAgo();
-    }
-
-    // Refresca el "hace X minutos" de cada tarjeta cada minuto
-    function refreshTimeAgo() {
-      document.querySelectorAll('.order-card').forEach(card => {
-        const fecha = card.dataset.fecha;
-        if (fecha) {
-          const metaEl = card.querySelector('.card-meta');
-          if (metaEl) metaEl.innerHTML = `<i class="fas fa-clock"></i> ${timeAgo(fecha)}`;
+        if (!email || !password) {
+          elements.loginErrorMsg.textContent = "Introduce email y contraseña.";
+          elements.loginError.style.display = "block";
+          return;
+        }
+        try {
+          await login(email, password);
+          location.reload();
+        } catch (e) {
+          elements.loginErrorMsg.textContent = "Credenciales incorrectas.";
+          elements.loginError.style.display  = "block";
+          elements.loginError.style.animation = 'none';
+          setTimeout(() => { elements.loginError.style.animation = 'shake 0.5s ease'; }, 10);
         }
       });
-    }
 
-    refreshTimeAgo();
-    setInterval(refreshTimeAgo, 30000);
+      elements.adminPinInput.addEventListener("keyup",   e => { if (e.key === "Enter") elements.loginBtn.click(); });
+      elements.adminEmailInput.addEventListener("keyup", e => { if (e.key === "Enter") elements.loginBtn.click(); });
 
-    // ── Borrar pedidos ──
-    async function borrarTodosLosPedidos() {
+    } else {
+      // ── Con sesión activa: inicializar la app ──
+      elements.loginModal.style.display = "none";
+
+      // Obtener restaurantId asignado a este usuario en /usuarios/{uid}/restaurantId
+      let restaurantId;
       try {
-        await remove(pedidosRef);
-        elements.ordersGrid.innerHTML = '';
+        restaurantId = await getRestaurantId();
+      } catch (e) {
+        elements.loginModal.style.display = "flex";
+        elements.loginErrorMsg.textContent = e.message;
+        elements.loginError.style.display  = "block";
+        throw e;
+      }
+
+      // Logout
+      elements.logoutBtn.addEventListener("click", async () => {
+        await logout();
+        location.reload();
+      });
+
+      // ── Nodo de pedidos de ESTE restaurante ──
+      const pedidosRef = ref(db, `restaurantes/${restaurantId}/pedidos`);
+
+      // ── Estadísticas ──
+      let lastActivityTime = null;
+
+      function updateStats() {
+        const cards = document.querySelectorAll('.order-card');
+        let pending = 0, completed = 0, cancelled = 0;
+        cards.forEach(c => {
+          if (c.dataset.status === 'pending')   pending++;
+          if (c.dataset.status === 'completed') completed++;
+          if (c.dataset.status === 'cancelled') cancelled++;
+        });
+        const total = pending + completed + cancelled;
+        document.getElementById('stat-pending').textContent   = pending;
+        document.getElementById('stat-completed').textContent = completed;
+        document.getElementById('stat-cancelled').textContent = cancelled;
+        document.getElementById('fc-all').textContent         = total;
+        document.getElementById('fc-pending').textContent     = pending;
+        document.getElementById('fc-completed').textContent   = completed;
+        document.getElementById('fc-cancelled').textContent   = cancelled;
+        const timeEl = document.getElementById('stat-time');
+        timeEl.textContent = lastActivityTime
+          ? lastActivityTime.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+          : '—';
+      }
+
+      function registrarActividad() {
+        lastActivityTime = new Date();
         updateStats();
-        showToast('Todos los pedidos eliminados', 'info');
-      } catch {
-        showToast('Error al eliminar los pedidos', 'error');
+        refreshTimeAgo();
       }
-    }
 
-    elements.deleteAllBtn.addEventListener('click', () => {
-      elements.confirmModal.style.display = 'flex';
-    });
-    elements.cancelDelete.addEventListener('click', () => {
-      elements.confirmModal.style.display = 'none';
-    });
-    elements.confirmDelete.addEventListener('click', async () => {
-      elements.confirmModal.style.display = 'none';
-      await borrarTodosLosPedidos();
-    });
-
-    // ── Time ago ──
-    function timeAgo(fecha) {
-      const diffMs  = Date.now() - new Date(fecha).getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1) return "Hace unos instantes";
-      return `Hace ${diffMin} min${diffMin > 1 ? '' : ''}`;
-    }
-
-    // ── Crear tarjeta ──
-    function crearOrderCard(key, data) {
-      const status = data.status || "pending";
-      let statusClass = "status-pending", statusText = "Pendiente";
-      if (status === "completed") { statusClass = "status-completed"; statusText = "Completado"; }
-      else if (status === "cancelled") { statusClass = "status-cancelled"; statusText = "Cancelado"; }
-
-      let itemsHTML = "";
-      if (Array.isArray(data.pedido)) {
-        data.pedido.forEach(item => {
-          const nombre   = item.name  || "Producto";
-          const cantidad = item.qty   || 1;
-          const precioItem = (item.price * cantidad).toFixed(2);
-
-          let detallesMenu = '';
-          if (item.menuSelections) {
-            detallesMenu = Object.entries(item.menuSelections)
-              .map(([sec, op]) => `<div class="item-detail">${sec}: ${op}</div>`)
-              .join('');
+      function refreshTimeAgo() {
+        document.querySelectorAll('.order-card').forEach(card => {
+          const fecha = card.dataset.fecha;
+          if (fecha) {
+            const metaEl = card.querySelector('.card-meta');
+            if (metaEl) metaEl.innerHTML = `<i class="fas fa-clock"></i> ${timeAgo(fecha)}`;
           }
-
-          let notasItem = '';
-          if (item.note) {
-            notasItem = `<div class="item-note"><i class="fas fa-pencil-alt" style="font-size:0.6rem;"></i> ${item.note}</div>`;
-          }
-
-          itemsHTML += `
-            <li class="order-item">
-              <div class="item-left">
-                <div class="item-name">
-                  <span class="item-qty">${cantidad}×</span>${nombre}
-                </div>
-                ${detallesMenu}
-                ${notasItem}
-              </div>
-              <span class="item-price">${precioItem}€</span>
-            </li>`;
         });
       }
+      refreshTimeAgo();
+      setInterval(refreshTimeAgo, 30000);
 
-      const card = document.createElement('div');
-      card.classList.add('order-card');
-      card.setAttribute('data-status', status);
-      card.setAttribute('data-key', key);
-      card.setAttribute('data-fecha', data.fecha || '');
-      card.innerHTML = `
-        <div class="card-head">
-          <div class="card-table">
-            <div class="table-icon"><i class="fas fa-chair"></i></div>
-            <span class="table-name">${data.mesa || 'Mesa Desconocida'}</span>
-          </div>
-          <div class="order-status ${statusClass}">${statusText}</div>
-        </div>
-        <div class="card-meta">
-          <i class="fas fa-clock"></i>
-          ${timeAgo(data.fecha)}
-        </div>
-        <ul class="order-items">${itemsHTML}</ul>
-        ${data.notas ? `<div class="order-notes"><strong>Nota:</strong> ${data.notas}</div>` : ''}
-        <div class="order-actions">
-          <button class="action-btn complete-btn" data-action="complete">
-            <i class="fas fa-check"></i> Listo
-          </button>
-          <button class="action-btn cancel-btn" data-action="cancel">
-            <i class="fas fa-times"></i> Cancelar
-          </button>
-          <button class="action-btn print-btn" data-action="print">
-            <i class="fas fa-print"></i> Imprimir
-          </button>
-        </div>`;
-
-      card.querySelector('[data-action="complete"]').addEventListener('click', () => actualizarEstadoPedido(key, 'completed'));
-      card.querySelector('[data-action="cancel"]').addEventListener('click', () => actualizarEstadoPedido(key, 'cancelled'));
-      card.querySelector('[data-action="print"]').addEventListener('click', () => printReceipt(key, data));
-
-      return card;
-    }
-
-    // ── Actualizar estado — primero Firebase, luego DOM ──
-    async function actualizarEstadoPedido(key, nuevoEstado) {
-      const pedidoRef = ref(db, 'pedidos/' + key);
-      try {
-        await update(pedidoRef, { status: nuevoEstado });
-        // Firebase confirmó: ahora actualizamos el DOM
-        const card = document.querySelector(`.order-card[data-key="${key}"]`);
-        if (card) {
-          card.setAttribute('data-status', nuevoEstado);
-          const statusEl = card.querySelector('.order-status');
-          statusEl.className = `order-status status-${nuevoEstado}`;
-          statusEl.textContent = nuevoEstado === 'completed' ? 'Completado'
-                               : nuevoEstado === 'cancelled' ? 'Cancelado'
-                               : 'Pendiente';
-          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
-          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.85)';
-            setTimeout(() => { card.style.display = 'none'; }, 400);
-          }
+      // ── Borrar todos los pedidos ──
+      async function borrarTodosLosPedidos() {
+        try {
+          await remove(pedidosRef);
+          elements.ordersGrid.innerHTML = '';
           updateStats();
+          showToast('Todos los pedidos eliminados', 'info');
+        } catch {
+          showToast('Error al eliminar los pedidos', 'error');
         }
-      } catch {
-        showToast('Error al actualizar el pedido', 'error');
       }
-    }
-
-    // ── Agregar o actualizar pedido ──
-    function agregarOActualizarPedido(key, data) {
-      const existente = document.querySelector(`.order-card[data-key="${key}"]`);
-
-      // Si existe el empty-state, quitarlo
-      const emptyState = elements.ordersGrid.querySelector('.empty-state');
-      if (emptyState) emptyState.remove();
-
-      const card = crearOrderCard(key, data);
-
-      if (existente) {
-        existente.style.opacity = '0';
-        existente.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-          elements.ordersGrid.replaceChild(card, existente);
-          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
-          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) card.style.display = 'none';
-          updateStats();
-        }, 300);
-      } else {
-        card.style.opacity = '0';
-        elements.ordersGrid.appendChild(card);
-        setTimeout(() => {
-          card.style.opacity = '1';
-          const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
-          if (currentFilter !== 'all' && card.dataset.status !== currentFilter) card.style.display = 'none';
-          updateStats();
-        }, 50);
-      }
-    }
-
-    // ── Imprimir ──
-    function printReceipt(key, data) {
-      const printWindow = window.open('', '', 'height=600,width=400');
-      printWindow.document.write('<html><head><title>Recibo de Pedido</title>');
-      printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;} h2{margin-bottom:10px;} ul{list-style:none;padding:0;} li{margin-bottom:5px;padding:5px 0;border-bottom:1px solid #eee;}</style>');
-      printWindow.document.write('</head><body>');
-      printWindow.document.write('<h2>Recibo de Pedido</h2>');
-      printWindow.document.write('<p><strong>Mesa:</strong> ' + (data.mesa || 'Mesa Desconocida') + '</p>');
-      printWindow.document.write('<p><strong>Fecha:</strong> ' + new Date(data.fecha).toLocaleString() + '</p>');
-      printWindow.document.write('<ul>');
-      if (Array.isArray(data.pedido)) {
-        data.pedido.forEach(item => {
-          const cantidad    = item.qty  || 1;
-          const nombre      = item.name || 'Producto';
-          const precioTotal = (item.price * cantidad).toFixed(2);
-          let detalles = '';
-          if (item.menuSelections) {
-            detalles = Object.entries(item.menuSelections)
-              .map(([s, o]) => `<div>${s}: ${o}</div>`)
-              .join('');
-          }
-          printWindow.document.write(`<li>
-            <div>${cantidad} x ${nombre} - ${precioTotal}€</div>
-            ${detalles}
-            ${item.note ? `<div>Nota: ${item.note}</div>` : ''}
-          </li>`);
-        });
-      }
-      printWindow.document.write('</ul>');
-      if (data.notas) printWindow.document.write('<p><strong>Notas:</strong> ' + data.notas + '</p>');
-      printWindow.document.write('</body></html>');
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    }
-
-    // ── Firebase listeners ──
-    let cargaInicial = true;
-    onChildAdded(pedidosRef, (snapshot) => {
-      const key  = snapshot.key;
-      const data = snapshot.val();
-      if (!cargaInicial && (!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
-        orderSound.play().catch(() => {});
-        lastSoundTime = Date.now();
-      }
-      agregarOActualizarPedido(key, data);
-      registrarActividad();
-    });
-
-    // Cuando Firebase termina de enviar los pedidos existentes, activamos el sonido
-    get(pedidosRef).then(() => { cargaInicial = false; });
-
-    onChildChanged(pedidosRef, (snapshot) => {
-      agregarOActualizarPedido(snapshot.key, snapshot.val());
-      registrarActividad();
-    });
-
-    onChildRemoved(pedidosRef, (snapshot) => {
-      const existente = document.querySelector(`.order-card[data-key="${snapshot.key}"]`);
-      if (existente) {
-        existente.style.opacity = '0';
-        existente.style.transform = 'scale(0.85)';
-        setTimeout(() => { existente.remove(); updateStats(); }, 300);
-      }
-      registrarActividad();
-    });
-
-    // ── Filtros ──
-    function updateFilters(newFilter) {
-      let filterText = "Todos los pedidos";
-      if (newFilter === 'pending')   filterText = "Pedidos pendientes";
-      if (newFilter === 'completed') filterText = "Pedidos completados";
-      if (newFilter === 'cancelled') filterText = "Pedidos cancelados";
-
-      elements.currentFilter.textContent = filterText;
-      elements.filterIndicator.classList.add('active');
-
-      elements.filterButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.filter === newFilter);
+      elements.deleteAllBtn.addEventListener('click', () => { elements.confirmModal.style.display = 'flex'; });
+      elements.cancelDelete.addEventListener('click',  () => { elements.confirmModal.style.display = 'none'; });
+      elements.confirmDelete.addEventListener('click', async () => {
+        elements.confirmModal.style.display = 'none';
+        await borrarTodosLosPedidos();
       });
-      elements.mobileFilters.value = newFilter;
-      filtrarPedidos(newFilter);
-    }
 
-    elements.mobileFilters.addEventListener('change', (e) => updateFilters(e.target.value));
-    elements.filterButtons.forEach(btn => {
-      btn.addEventListener('click', () => updateFilters(btn.dataset.filter));
-    });
+      // ── Time ago ──
+      function timeAgo(fecha) {
+        const diffMin = Math.floor((Date.now() - new Date(fecha).getTime()) / 60000);
+        if (diffMin < 1) return "Hace unos instantes";
+        return `Hace ${diffMin} min${diffMin > 1 ? '' : ''}`;
+      }
 
-    function filtrarPedidos(filtro) {
-      document.querySelectorAll('.order-card').forEach(card => {
-        if (filtro === 'all' || card.dataset.status === filtro) {
-          card.classList.add('sorting-animation');
-          card.style.opacity = '0';
-          card.style.transform = 'translateY(12px)';
+      // ── Crear tarjeta de pedido ──
+      function crearOrderCard(key, data) {
+        const status = data.status || "pending";
+        let statusClass = "status-pending", statusText = "Pendiente";
+        if (status === "completed") { statusClass = "status-completed"; statusText = "Completado"; }
+        if (status === "cancelled") { statusClass = "status-cancelled"; statusText = "Cancelado"; }
+
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.dataset.key    = key;
+        card.dataset.status = status;
+        card.dataset.fecha  = data.fecha || '';
+
+        let itemsHtml = '';
+        if (Array.isArray(data.pedido)) {
+          data.pedido.forEach(item => {
+            const cantidad    = item.qty  || 1;
+            const nombre      = item.name || 'Producto';
+            const precioTotal = (item.price * cantidad).toFixed(2);
+            let detallesHtml  = '';
+            if (item.menuSelections) {
+              detallesHtml = Object.entries(item.menuSelections)
+                .map(([s, o]) => `<div class="item-detail">${s}: ${o}</div>`).join('');
+            }
+            itemsHtml += `<div class="order-item">
+              <div class="item-qty">${cantidad}×</div>
+              <div class="item-info">
+                <div class="item-name">${nombre}</div>
+                ${detallesHtml}
+                ${item.note ? `<div class="item-note">📝 ${item.note}</div>` : ''}
+              </div>
+              <div class="item-price">${precioTotal}€</div>
+            </div>`;
+          });
+        }
+
+        const precioF = data.precio != null ? Number(data.precio).toFixed(2) : '—';
+
+        card.innerHTML = `
+          <div class="card-header-row">
+            <div class="card-table-badge">${data.mesa || 'Mesa'}</div>
+            <span class="order-status ${statusClass}">${statusText}</span>
+          </div>
+          <div class="card-meta"><i class="fas fa-clock"></i> ${timeAgo(data.fecha)}</div>
+          <div class="order-items">${itemsHtml}</div>
+          ${data.notas ? `<div class="order-notes"><i class="fas fa-sticky-note"></i> ${data.notas}</div>` : ''}
+          <div class="card-footer-row">
+            <div class="card-total">Total: <strong>${precioF}€</strong></div>
+            <div class="order-actions">
+              <button class="action-btn complete-btn" data-action="complete" title="Completar"><i class="fas fa-check"></i></button>
+              <button class="action-btn cancel-btn"   data-action="cancel"   title="Cancelar"><i class="fas fa-times"></i></button>
+              <button class="action-btn print-btn"    data-action="print"    title="Imprimir"><i class="fas fa-print"></i></button>
+            </div>
+          </div>`;
+
+        card.querySelector('[data-action="complete"]').addEventListener('click', () => actualizarEstadoPedido(key, 'completed'));
+        card.querySelector('[data-action="cancel"]').addEventListener('click',   () => actualizarEstadoPedido(key, 'cancelled'));
+        card.querySelector('[data-action="print"]').addEventListener('click',    () => printReceipt(key, data));
+        return card;
+      }
+
+      // ── Actualizar estado (Firebase primero, luego DOM) ──
+      async function actualizarEstadoPedido(key, nuevoEstado) {
+        const pedidoRef = ref(db, `restaurantes/${restaurantId}/pedidos/${key}`);
+        try {
+          await update(pedidoRef, { status: nuevoEstado });
+          const card = document.querySelector(`.order-card[data-key="${key}"]`);
+          if (card) {
+            card.setAttribute('data-status', nuevoEstado);
+            const statusEl = card.querySelector('.order-status');
+            statusEl.className   = `order-status status-${nuevoEstado}`;
+            statusEl.textContent = nuevoEstado === 'completed' ? 'Completado'
+                                 : nuevoEstado === 'cancelled' ? 'Cancelado' : 'Pendiente';
+            const currentFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
+            if (currentFilter !== 'all' && card.dataset.status !== currentFilter) {
+              card.style.opacity = '0';
+              card.style.transform = 'scale(0.85)';
+              setTimeout(() => { card.style.display = 'none'; }, 400);
+            }
+            updateStats();
+          }
+        } catch { showToast('Error al actualizar el pedido', 'error'); }
+      }
+
+      // ── Agregar o actualizar tarjeta en la cuadrícula ──
+      function agregarOActualizarPedido(key, data) {
+        const existente  = document.querySelector(`.order-card[data-key="${key}"]`);
+        const emptyState = elements.ordersGrid.querySelector('.empty-state');
+        if (emptyState) emptyState.remove();
+        const card = crearOrderCard(key, data);
+        if (existente) {
+          existente.style.opacity   = '0';
+          existente.style.transform = 'scale(0.9)';
           setTimeout(() => {
-            card.style.display = 'block';
-            setTimeout(() => {
-              card.style.opacity = '1';
-              card.style.transform = 'translateY(0)';
-            }, 50);
+            elements.ordersGrid.replaceChild(card, existente);
+            const cf = document.querySelector('.filter-btn.active')?.dataset.filter;
+            if (cf !== 'all' && card.dataset.status !== cf) card.style.display = 'none';
+            updateStats();
           }, 300);
         } else {
-          card.classList.add('sorting-animation');
           card.style.opacity = '0';
-          card.style.transform = 'translateY(-12px)';
-          setTimeout(() => { card.style.display = 'none'; }, 300);
+          elements.ordersGrid.appendChild(card);
+          setTimeout(() => {
+            card.style.opacity = '1';
+            const cf = document.querySelector('.filter-btn.active')?.dataset.filter;
+            if (cf !== 'all' && card.dataset.status !== cf) card.style.display = 'none';
+            updateStats();
+          }, 50);
         }
-      });
-    }
-
-    updateFilters('all');
-    updateStats();
-
-    // ── Tema oscuro / claro ──
-    const themeBtn  = document.getElementById('themeToggle');
-    const htmlEl    = document.documentElement;
-    let isDark = localStorage.getItem('theme') === 'dark';
-
-    function applyTheme() {
-      if (isDark) {
-        htmlEl.setAttribute('data-theme', 'dark');
-        themeBtn.querySelector('i').className = 'fas fa-sun';
-        themeBtn.title = 'Modo claro';
-      } else {
-        htmlEl.removeAttribute('data-theme');
-        themeBtn.querySelector('i').className = 'fas fa-moon';
-        themeBtn.title = 'Modo oscuro';
       }
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
 
-    themeBtn.addEventListener('click', () => {
-      isDark = !isDark;
+      // ── Imprimir recibo ──
+      function printReceipt(key, data) {
+        const w = window.open('', '', 'height=600,width=400');
+        w.document.write('<html><head><title>Recibo</title>');
+        w.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;}h2{margin-bottom:10px;}ul{list-style:none;padding:0;}li{margin-bottom:5px;padding:5px 0;border-bottom:1px solid #eee;}</style>');
+        w.document.write('</head><body>');
+        w.document.write('<h2>Recibo de Pedido</h2>');
+        w.document.write('<p><strong>Mesa:</strong> ' + (data.mesa || '—') + '</p>');
+        w.document.write('<p><strong>Fecha:</strong> ' + new Date(data.fecha).toLocaleString() + '</p>');
+        w.document.write('<ul>');
+        if (Array.isArray(data.pedido)) {
+          data.pedido.forEach(item => {
+            const qty = item.qty || 1;
+            const pt  = (item.price * qty).toFixed(2);
+            let det = '';
+            if (item.menuSelections) {
+              det = Object.entries(item.menuSelections).map(([s,o]) => `<div>${s}: ${o}</div>`).join('');
+            }
+            w.document.write(`<li><div>${qty} x ${item.name || 'Producto'} - ${pt}€</div>${det}${item.note ? `<div>Nota: ${item.note}</div>` : ''}</li>`);
+          });
+        }
+        w.document.write('</ul>');
+        if (data.notas) w.document.write('<p><strong>Notas:</strong> ' + data.notas + '</p>');
+        w.document.write('</body></html>');
+        w.document.close(); w.focus(); w.print(); w.close();
+      }
+
+      // ── Firebase Listeners ──
+      let cargaInicial = true;
+      onChildAdded(pedidosRef, (snapshot) => {
+        const key  = snapshot.key;
+        const data = snapshot.val();
+        if (!cargaInicial && (!data.status || data.status === "pending") && soundEnabled && Date.now() - lastSoundTime > 3000) {
+          orderSound.play().catch(() => {});
+          lastSoundTime = Date.now();
+        }
+        agregarOActualizarPedido(key, data);
+        registrarActividad();
+      });
+
+      get(pedidosRef).then(() => { cargaInicial = false; });
+
+      onChildChanged(pedidosRef, (snapshot) => {
+        agregarOActualizarPedido(snapshot.key, snapshot.val());
+        registrarActividad();
+      });
+
+      onChildRemoved(pedidosRef, (snapshot) => {
+        const existente = document.querySelector(`.order-card[data-key="${snapshot.key}"]`);
+        if (existente) {
+          existente.style.opacity   = '0';
+          existente.style.transform = 'scale(0.85)';
+          setTimeout(() => { existente.remove(); updateStats(); }, 300);
+        }
+        registrarActividad();
+      });
+
+      // ── Filtros ──
+      function updateFilters(newFilter) {
+        const labels = { all: 'Todos los pedidos', pending: 'Pedidos pendientes', completed: 'Pedidos completados', cancelled: 'Pedidos cancelados' };
+        elements.currentFilter.textContent = labels[newFilter] || 'Todos';
+        elements.filterIndicator.classList.add('active');
+        elements.filterButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.filter === newFilter));
+        elements.mobileFilters.value = newFilter;
+        filtrarPedidos(newFilter);
+      }
+
+      elements.mobileFilters.addEventListener('change', e => updateFilters(e.target.value));
+      elements.filterButtons.forEach(btn => btn.addEventListener('click', () => updateFilters(btn.dataset.filter)));
+
+      function filtrarPedidos(filtro) {
+        document.querySelectorAll('.order-card').forEach(card => {
+          if (filtro === 'all' || card.dataset.status === filtro) {
+            card.classList.add('sorting-animation');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(12px)';
+            setTimeout(() => {
+              card.style.display = 'block';
+              setTimeout(() => { card.style.opacity = '1'; card.style.transform = 'translateY(0)'; }, 50);
+            }, 300);
+          } else {
+            card.classList.add('sorting-animation');
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-12px)';
+            setTimeout(() => { card.style.display = 'none'; }, 300);
+          }
+        });
+      }
+
+      updateFilters('all');
+      updateStats();
+
+      // ── Tema oscuro / claro ──
+      const themeBtn = document.getElementById('themeToggle');
+      const htmlEl   = document.documentElement;
+      let isDark = localStorage.getItem('theme') === 'dark';
+
+      function applyTheme() {
+        if (isDark) {
+          htmlEl.setAttribute('data-theme', 'dark');
+          themeBtn.querySelector('i').className = 'fas fa-sun';
+          themeBtn.title = 'Modo claro';
+        } else {
+          htmlEl.removeAttribute('data-theme');
+          themeBtn.querySelector('i').className = 'fas fa-moon';
+          themeBtn.title = 'Modo oscuro';
+        }
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      }
+      themeBtn.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
       applyTheme();
-    });
 
-    applyTheme();
+    } // fin bloque autenticado
+
   </script>
 </body>
 </html>
