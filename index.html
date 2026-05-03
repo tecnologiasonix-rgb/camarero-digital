@@ -397,15 +397,7 @@
       max-width: 460px;
       overflow: visible;
       box-shadow: 0 24px 80px rgba(0,0,0,0.7);
-      transform: scale(0.95) translateY(12px);
-      opacity: 0;
-      transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       margin: auto;
-    }
-
-    .modal.active .modal-content {
-      transform: scale(1) translateY(0);
-      opacity: 1;
     }
 
     /* Botón cerrar flotante sobre la imagen */
@@ -1061,7 +1053,6 @@
   <div class="modal" id="productModal">
     <div class="modal-content">
       <div class="modal-body" style="position:relative;">
-        <button id="closeModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <img id="modalImg" src="" alt="Imagen del producto">
         <h2 id="modalTitle"></h2>
         <p id="modalDesc"></p>
