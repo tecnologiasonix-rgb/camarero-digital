@@ -1,0 +1,183 @@
+/* ================= ROOT ================= */
+
+:root {
+  --bg: #F4F2EE;
+  --surface: #FFFFFF;
+  --surface2: #F9F8F6;
+  --border: #E5E2DC;
+  --ink: #1A1A18;
+  --ink-muted: #7A7870;
+  --ink-dim: #BEBAB2;
+  --accent: #1A1A18;
+  --accent-fg: #FFFFFF;
+  --danger: #D94F3D;
+  --success: #2D9B6F;
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ================= BASE ================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Mulish', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* ================= HEADER ================= */
+
+header {
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--ink);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-title {
+  font-weight: 700;
+}
+
+.header-subtitle {
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+/* ================= BUTTON ================= */
+
+.btn-manage {
+  background: var(--ink);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ================= PANEL ================= */
+
+#adminPanel {
+  display: none;
+  padding: 20px;
+}
+
+#adminPanel.open {
+  display: block;
+}
+
+/* ================= TABLE ================= */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+th {
+  background: var(--surface2);
+  text-align: left;
+  padding: 10px;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+td {
+  padding: 10px;
+  border-top: 1px solid var(--border);
+}
+
+tr:hover {
+  background: var(--surface2);
+}
+
+/* ================= LOADER ================= */
+
+.loader-wrap {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.loader-wrap.active {
+  display: flex;
+}
+
+.loader-ring {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--ink);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================= TOAST ================= */
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+.toast.error {
+  background: var(--danger);
+}
+
+.toast.success {
+  background: var(--success);
+}
+
+/* ================= EMPTY ================= */
+
+#adminTableContainer p {
+  padding: 20px;
+  text-align: center;
+  color: var(--ink-muted);
+}
