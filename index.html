@@ -361,7 +361,6 @@
     /* Bloqueo de scroll robusto en móvil */
     .no-scroll {
       overflow: hidden;
-      position: fixed;
       width: 100%;
       touch-action: none;
     }
@@ -822,6 +821,25 @@
       color: var(--text-primary);
     }
 
+    /* ─── MODAL MENU-MODE: scroll interno independiente ─── */
+    #productModal.menu-mode {
+      align-items: center;
+    }
+
+    #productModal.menu-mode .modal-content {
+      max-height: 88vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #productModal.menu-mode .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
     /* ─── MENU OPTIONS (category=Menu) ─── */
     .menu-container {
       display: flex;
@@ -1100,7 +1118,6 @@
   <div class="modal" id="orderModal">
     <div class="modal-content">
       <div class="modal-body" style="position:relative;">
-        <button id="closeOrderModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <div class="modal-icon"><i class="fas fa-receipt"></i></div>
         <p style="font-size:1rem;color:var(--text-primary);">
           ¿Confirmas el pedido por un total de&nbsp;
@@ -1118,7 +1135,6 @@
   <div class="modal" id="messageModal">
     <div class="modal-content">
       <div class="modal-body" style="position:relative;">
-        <button id="closeMessageModal" class="modal-close-float"><i class="fas fa-times"></i></button>
         <div class="modal-icon"><i class="fas fa-info-circle"></i></div>
         <p id="messageModalText"></p>
       </div>
@@ -1420,6 +1436,7 @@
       const prevMenu = document.getElementById('menuOptions');
       if (prevMenu) prevMenu.remove();
 
+      window._savedScrollY = window.scrollY;
       productModal.classList.add('active');
       document.getElementById('overlay').classList.add('active');
       document.body.classList.add('no-scroll');
@@ -1514,6 +1531,7 @@
       productModal.classList.remove('active', 'menu-mode');
       document.getElementById('overlay').classList.remove('active');
       document.body.classList.remove('no-scroll');
+      window.scrollTo(0, window._savedScrollY || 0);
       selectedProduct = null;
 
       const prevMenu = document.getElementById('menuOptions');
@@ -1749,7 +1767,8 @@
       document.body.classList.remove('no-scroll');
     }
 
-    document.getElementById('closeOrderModal').addEventListener('click', closeOrderModal);
+    const closeOrderModalBtn = document.getElementById('closeOrderModal');
+    if (closeOrderModalBtn) closeOrderModalBtn.addEventListener('click', closeOrderModal);
     document.getElementById('cancelOrder').addEventListener('click', closeOrderModal);
 
     document.getElementById('confirmOrder').addEventListener('click', async () => {
@@ -1795,7 +1814,8 @@
       document.body.classList.remove('no-scroll');
     }
 
-    document.getElementById('closeMessageModal').addEventListener('click', closeMessage);
+    const closeMessageModalBtn2 = document.getElementById('closeMessageModal');
+    if (closeMessageModalBtn2) closeMessageModalBtn2.addEventListener('click', closeMessage);
     document.getElementById('closeMessageModalBtn').addEventListener('click', closeMessage);
 
     // ── Overlay: cerrar cualquier panel/modal abierto ────────
