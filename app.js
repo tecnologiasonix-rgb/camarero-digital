@@ -1,8 +1,9 @@
-// Importa los módulos necesarios desde Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, get }
+                            from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+                            from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// ─── CONFIGURACIÓN DE FIREBASE ───────────────────────────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyDPbN_dr1LzVhksnFmzeKOLpHAZZRSxWv4",
   authDomain:        "tecnologiasonix-733fc.firebaseapp.com",
@@ -10,36 +11,72 @@ const firebaseConfig = {
   projectId:         "tecnologiasonix-733fc",
   storageBucket:     "tecnologiasonix-733fc.firebasestorage.app",
   messagingSenderId: "139377195491",
-  appId:             "1:139377195491:web:0727f6e57cc23351bd88d6",
-  measurementId:     "G-DTY83CCZZ9"
+  appId:             "1:139377195491:web:0727f6e57cc23351bd88d6"
 };
 
-// Inicializa Firebase
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+const app  = initializeApp(firebaseConfig);
+export const db   = getDatabase(app);
+export const auth = getAuth(app);
 
-/**
- * Guarda un pedido en Firebase Realtime Database.
- * @param {Object} orderData
- * @returns {Promise}
- */
-export function guardarPedido(orderData) {
-  if (!orderData.fecha) {
-    orderData.fecha = new Date().toISOString();
-  }
-  const pedidosRef = ref(db, 'pedidos');
-  return push(pedidosRef, orderData);
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+
+/** Login con email y contraseña */
+export async function login(email, password) {
+  return signInWithEmailAndPassword(auth, email, password);
+}
+
+export function logout() {
+  return signOut(auth);
 }
 
 /**
- * Carga todos los productos desde Firebase Realtime Database.
- * Estructura esperada en /productos/{id}:
- *   name, description, price, image, category, subcategory, menuOptions (opcional)
- * @returns {Promise<Array>}
+ * Obtiene el restaurantId del usuario autenticado.
+ * Lee /usuarios/{uid}/restaurantId en la base de datos.
  */
-export async function cargarProductos() {
-  const productosRef = ref(db, 'productos');
-  const snapshot = await get(productosRef);
+export async function getRestaurantId() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No hay sesión activa.");
+  const snap = await get(ref(db, `usuarios/${user.uid}/restaurantId`));
+  if (!snap.exists()) throw new Error("Usuario sin restaurante asignado.");
+  return snap.val();
+}
+
+/**
+ * Espera a que Firebase Auth resuelva el estado del usuario.
+ * Útil para proteger páginas de admin/recepcion.
+ */
+export function esperarAuth() {
+  return new Promise((resolve) => {
+    onAuthStateChanged(auth, resolve);
+  });
+}
+
+// ─── DATOS ───────────────────────────────────────────────────────────────────
+
+/**
+ * ANTES: guardarPedido(orderData)
+ *        → push(ref(db, 'pedidos'), orderData)
+ *
+ * DESPUÉS: guardarPedido(orderData, restaurantId)
+ *          → push(ref(db, 'restaurantes/{restaurantId}/pedidos'), orderData)
+ */
+export function guardarPedido(orderData, restaurantId) {
+  if (!restaurantId) throw new Error("restaurantId requerido");
+  if (!orderData.fecha) orderData.fecha = new Date().toISOString();
+  orderData.restaurantId = restaurantId; // incluido por seguridad
+  return push(ref(db, `restaurantes/${restaurantId}/pedidos`), orderData);
+}
+
+/**
+ * ANTES: cargarProductos()
+ *        → get(ref(db, 'productos'))
+ *
+ * DESPUÉS: cargarProductos(restaurantId)
+ *          → get(ref(db, 'restaurantes/{restaurantId}/productos'))
+ */
+export async function cargarProductos(restaurantId) {
+  if (!restaurantId) throw new Error("restaurantId requerido");
+  const snapshot = await get(ref(db, `restaurantes/${restaurantId}/productos`));
   if (!snapshot.exists()) return [];
 
   const productos = [];
@@ -56,8 +93,7 @@ export async function cargarProductos() {
       menuOptions: data.menuOptions || null,
     });
   });
-
   return productos.filter(p => p.name);
 }
 
-export { firebaseConfig, db };
+export { firebaseConfig };
