@@ -372,7 +372,7 @@
       inset: 0;
       display: none;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       padding: 1rem;
       z-index: 1001;
       overflow-y: auto;
@@ -395,7 +395,9 @@
       border-radius: var(--radius);
       width: 100%;
       max-width: 460px;
-      overflow: visible;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: 0 24px 80px rgba(0,0,0,0.7);
       margin: auto;
     }
