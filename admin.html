@@ -11,6 +11,21 @@
 
 <body>
 
+  <!-- MODAL DE LOGIN -->
+<div id="loginModal" class="login-modal" style="display:flex;">
+  <div class="login-content">
+    <div class="login-logo"><i class="fas fa-utensils"></i></div>
+    <h2>Panel Admin</h2>
+    <p>Accede con tus credenciales de restaurante</p>
+    <input type="email"    id="adminEmail"    placeholder="📧 Email">
+    <input type="password" id="adminPassword" placeholder="🔒 Contraseña">
+    <button id="adminLoginBtn">Entrar</button>
+    <p id="loginErrorMsg" style="color:#D94F3D;margin-top:12px;display:none;">
+      <i class="fas fa-exclamation-triangle"></i> <span id="loginErrorText"></span>
+    </p>
+  </div>
+</div>
+
 <!-- LOADER -->
 <div class="loader-wrap" id="loader">
   <div class="loader-ring"></div>
