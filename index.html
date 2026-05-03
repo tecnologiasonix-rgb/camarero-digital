@@ -838,6 +838,13 @@
       flex: 1;
       overflow-y: auto;
       overscroll-behavior: contain;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #productModal.menu-mode .modal-content {
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
 
     /* ─── MENU OPTIONS (category=Menu) ─── */
@@ -1905,6 +1912,8 @@
         if (el.classList && (
           el.classList.contains('cart-items-container') ||
           el.classList.contains('modal') ||
+          el.classList.contains('modal-content') ||
+          el.classList.contains('modal-body') ||
           el.classList.contains('cart-panel')
         )) {
           const canScrollUp   = el.scrollTop > 0;
