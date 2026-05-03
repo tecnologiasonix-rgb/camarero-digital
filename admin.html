@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Panel Admin – con diagnóstico</title>
+  <title>Panel Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    /* ================= ROOT ================= */
     :root {
       --bg: #F4F2EE;
       --surface: #FFFFFF;
@@ -13,65 +14,117 @@
       --border: #E5E2DC;
       --ink: #1A1A18;
       --ink-muted: #7A7870;
+      --ink-dim: #BEBAB2;
+      --accent: #1A1A18;
+      --accent-fg: #FFFFFF;
       --danger: #D94F3D;
       --success: #2D9B6F;
       --radius: 12px;
       --shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Mulish', sans-serif; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: 'Mulish', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
     header {
-      height: 64px; display: flex; justify-content: space-between; align-items: center;
-      padding: 0 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
     }
     .header-left { display: flex; align-items: center; gap: 10px; }
     .header-icon {
-      width: 36px; height: 36px; background: var(--ink); color: white;
-      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px;
+      background: var(--ink);
+      color: white;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
     }
     .header-title { font-weight: 700; }
     .header-subtitle { font-size: 0.75rem; color: var(--ink-muted); }
+
     .btn-manage {
-      background: var(--ink); color: white; border: none;
-      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      background: var(--ink);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
     }
+
     #adminPanel { display: none; padding: 20px; }
     #adminPanel.open { display: block; }
+
     table {
-      width: 100%; border-collapse: collapse; background: var(--surface);
-      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
     }
-    th { background: var(--surface2); text-align: left; padding: 10px; font-size: 0.75rem; color: var(--ink-muted); }
+    th {
+      background: var(--surface2);
+      text-align: left; padding: 10px;
+      font-size: 0.75rem; color: var(--ink-muted);
+    }
     td { padding: 10px; border-top: 1px solid var(--border); }
     tr:hover { background: var(--surface2); }
+
     .loader-wrap {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.3);
       justify-content: center; align-items: center; flex-direction: column;
     }
     .loader-wrap.active { display: flex; }
     .loader-ring {
-      width: 40px; height: 40px; border: 3px solid var(--border);
-      border-top: 3px solid var(--ink); border-radius: 50%; animation: spin 1s linear infinite;
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top: 3px solid var(--ink);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
     .toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: var(--ink); color: white; padding: 10px 20px; border-radius: 20px;
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink); color: white;
+      padding: 10px 20px; border-radius: 20px;
       opacity: 0; transition: 0.3s;
     }
     .toast.show { opacity: 1; }
     .toast.error { background: var(--danger); }
     .toast.success { background: var(--success); }
-    #adminTableContainer p { padding: 20px; text-align: center; color: var(--ink-muted); }
+
+    #adminTableContainer p {
+      padding: 20px; text-align: center; color: var(--ink-muted);
+    }
+
+    /* ================= LOGIN MODAL ================= */
     .login-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      display: flex; justify-content: center; align-items: center; z-index: 9999;
-      padding: 20px; backdrop-filter: blur(8px);
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 9999; padding: 20px;
+      backdrop-filter: blur(8px);
     }
     .login-content {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 2.5rem 2rem; border-radius: var(--radius); text-align: center;
-      max-width: 320px; width: 100%; box-shadow: var(--shadow);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      border-radius: var(--radius);
+      text-align: center;
+      max-width: 320px; width: 100%;
+      box-shadow: var(--shadow);
       animation: modalPop 0.3s ease;
     }
     @keyframes modalPop {
@@ -79,25 +132,35 @@
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
     .login-logo {
-      width: 52px; height: 52px; background: var(--ink); border-radius: 14px;
+      width: 52px; height: 52px;
+      background: var(--ink); border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem; color: white; margin: 0 auto 1.4rem;
+      font-size: 1.4rem; color: var(--accent-fg);
+      margin: 0 auto 1.4rem;
     }
-    .login-content h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .login-content p { font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 1.5rem; }
+    .login-content h2 {
+      font-size: 1.15rem; font-weight: 700; margin-bottom: 0.3rem;
+    }
+    .login-content p {
+      font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 1.5rem;
+    }
     .login-content input {
       width: 100%; padding: 11px 14px; margin-bottom: 14px;
       border: 1.5px solid var(--border); border-radius: 8px;
       font-family: 'Mulish', sans-serif; font-size: 1rem;
-      background: var(--surface2); color: var(--ink); text-align: center; outline: none;
+      background: var(--surface2); color: var(--ink);
+      text-align: center; outline: none;
     }
     .login-content input:focus { border-color: var(--ink); }
     .login-content button {
-      width: 100%; padding: 11px; font-family: 'Mulish', sans-serif;
-      font-size: 0.9rem; font-weight: 700; background: var(--ink);
-      color: white; border: none; border-radius: 8px; cursor: pointer;
+      width: 100%; padding: 11px;
+      font-family: 'Mulish', sans-serif; font-size: 0.9rem; font-weight: 700;
+      background: var(--ink); color: var(--accent-fg);
+      border: none; border-radius: 8px; cursor: pointer;
     }
-    .login-error { color: var(--danger); margin-top: 12px; font-size: 0.82rem; display: none; }
+    .login-error {
+      color: var(--danger); margin-top: 12px; font-size: 0.82rem; display: none;
+    }
   </style>
 </head>
 <body>
@@ -117,23 +180,30 @@
     </div>
   </div>
 
+  <!-- LOADER -->
   <div class="loader-wrap" id="loader">
     <div class="loader-ring"></div>
     <p>Cargando…</p>
   </div>
+
+  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
+  <!-- HEADER -->
   <header>
     <div class="header-left">
       <div class="header-icon"><i class="fas fa-utensils"></i></div>
       <div>
         <div class="header-title">Panel Admin</div>
-        <div class="header-subtitle" id="headerRestaurantId">Restaurante</div>
+        <div class="header-subtitle">Restaurante</div>
       </div>
     </div>
-    <button id="toggleAdmin" class="btn-manage"><i class="fas fa-sliders-h"></i> Gestionar</button>
+    <button id="toggleAdmin" class="btn-manage">
+      <i class="fas fa-sliders-h"></i> Gestionar
+    </button>
   </header>
 
+  <!-- PANEL -->
   <div id="adminPanel">
     <div id="adminTableContainer"></div>
   </div>
@@ -171,9 +241,10 @@
     const container = document.getElementById("adminTableContainer");
     const toast = document.getElementById("toast");
     const loader = document.getElementById("loader");
-    const headerRestaurantId = document.getElementById("headerRestaurantId");
 
-    function getParam(p) { return new URLSearchParams(window.location.search).get(p); }
+    function getParam(param) {
+      return new URLSearchParams(window.location.search).get(param);
+    }
 
     adminPanel.style.display = "none";
 
@@ -182,31 +253,23 @@
       if (urlRestaurant) {
         restaurantId = urlRestaurant;
         loginModal.style.display = "none";
-        headerRestaurantId.textContent = `Modo URL: ${restaurantId}`;
         loadProducts();
         return;
       }
 
       if (user) {
         loginModal.style.display = "none";
-        try {
-          const snap = await get(ref(db, `usuarios/${user.uid}/restaurantId`));
-          if (snap.exists()) {
-            restaurantId = snap.val();
-            headerRestaurantId.textContent = `Restaurante: ${restaurantId}`;
-            loadProducts();
-          } else {
-            showToast("Tu cuenta no tiene restaurante asignado.", "error");
-            await signOut(auth);
-            loginModal.style.display = "flex";
-          }
-        } catch (e) {
-          showToast("Error al obtener restaurante: " + e.message, "error");
-          console.error(e);
+        const snap = await get(ref(db, `usuarios/${user.uid}/restaurantId`));
+        if (snap.exists()) {
+          restaurantId = snap.val();
+          loadProducts();
+        } else {
+          showToast("Tu cuenta no tiene restaurante asignado.", "error");
+          await signOut(auth);
+          loginModal.style.display = "flex";
         }
       } else {
         loginModal.style.display = "flex";
-        headerRestaurantId.textContent = "No autenticado";
         restaurantId = null;
       }
     });
@@ -231,9 +294,12 @@
     });
 
     [emailInput, passInput].forEach(el => {
-      el.addEventListener("keyup", (e) => { if (e.key === "Enter") loginBtn.click(); });
+      el.addEventListener("keyup", (e) => {
+        if (e.key === "Enter") loginBtn.click();
+      });
     });
 
+    // Botón Salir
     const logoutBtn = document.createElement("button");
     logoutBtn.className = "btn-manage";
     logoutBtn.style.marginLeft = "10px";
@@ -249,32 +315,20 @@
     });
 
     async function loadProducts() {
-      if (!restaurantId) {
-        container.innerHTML = "<p>No se ha definido un restaurante.</p>";
-        return;
-      }
+      if (!restaurantId) return;
       showLoader();
-      try {
-        const snap = await get(ref(db, `restaurantes/${restaurantId}/productos`));
-        products = [];
-        if (snap.exists()) {
-          snap.forEach(child => {
-            products.push({ id: child.key, ...child.val() });
-          });
-        }
-        // Quitamos el loader antes de pintar
-        hideLoader();
-        renderProducts();
-      } catch (e) {
-        hideLoader();
-        container.innerHTML = `<p style="color:var(--danger);">Error al cargar: ${e.message}</p>`;
-        console.error(e);
+      const snap = await get(ref(db, `restaurantes/${restaurantId}/productos`));
+      products = [];
+      if (snap.exists()) {
+        snap.forEach(child => products.push({ id: child.key, ...child.val() }));
       }
+      renderProducts();
+      hideLoader();
     }
 
     function renderProducts() {
       if (!products.length) {
-        container.innerHTML = `<p>No hay productos en «${restaurantId}».</p>`;
+        container.innerHTML = "<p>No hay productos en la base de datos.</p>";
         return;
       }
       container.innerHTML = `
@@ -283,7 +337,7 @@
           ${products.map(p => `
             <tr>
               <td>${p.name || "Sin nombre"}</td>
-              <td>${p.price ? Number(p.price).toFixed(2) : '0.00'}€</td>
+              <td>${p.price ? p.price.toFixed(2) : '0.00'}€</td>
             </tr>
           `).join("")}
         </table>`;
@@ -296,10 +350,7 @@
       toast.className = "toast show " + type;
       setTimeout(() => toast.classList.remove("show"), 3000);
     }
-
-    // Exponer para depuración
-    window.debugRestaurantId = () => restaurantId;
-    window.debugProducts = () => products;
   </script>
+
 </body>
 </html>
